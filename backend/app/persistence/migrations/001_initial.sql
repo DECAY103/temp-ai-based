@@ -1,0 +1,102 @@
+-- migrations/001_initial.sql
+-- Owner: Person 3 (M.9)
+-- Run this script against your Supabase / PostgreSQL database to create the schema.
+--
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- for gen_random_uuid()
+
+CREATE TABLE IF NOT EXISTS users (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email           TEXT NOT NULL UNIQUE,
+    password_hash   TEXT NOT NULL,
+    role            TEXT NOT NULL CHECK (role IN ('candidate', 'recruiter', 'admin')),
+    totp_secret     TEXT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── batch_jobs ──────────────────────────────────────────────────────────────
+-- Tracks each upload batch (single résumé or ZIP archive).
+
+CREATE TABLE IF NOT EXISTS batch_jobs (
+    batch_id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Status lifecycle: queued → extracting → scoring → completed | failed
+    status              TEXT        NOT NULL DEFAULT 'queued'
+                            CHECK (status IN ('queued','extracting','scoring',
+                                              'pre_filtered','completed','failed')),
+
+    total_files         INT         NOT NULL DEFAULT 1,
+    processed_files     INT         NOT NULL DEFAULT 0,
+    failed_files        INT         NOT NULL DEFAULT 0,
+    pre_filtered_count  INT         NOT NULL DEFAULT 0,
+
+    -- Stored for fault-recovery: enough context to re-run the pipeline on restart
+    -- TODO (Person 3 — M.9): Add storage_url or file_path column if needed.
+    rubric              JSONB,
+    upload_bytes        BYTEA,
+    upload_filename     TEXT,
+    error_log           TEXT
+);
+
+ALTER TABLE batch_jobs ADD COLUMN IF NOT EXISTS upload_bytes BYTEA;
+ALTER TABLE batch_jobs ADD COLUMN IF NOT EXISTS upload_filename TEXT;
+
+-- Auto-update updated_at on every write
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS batch_jobs_updated_at ON batch_jobs;
+CREATE TRIGGER batch_jobs_updated_at
+    BEFORE UPDATE ON batch_jobs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+
+-- ─── candidate_evaluations ───────────────────────────────────────────────────
+-- One row per candidate per batch. Stores Stage 1 score and Stage 2 evaluation.
+
+CREATE TABLE IF NOT EXISTS candidate_evaluations (
+    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    batch_id                UUID        NOT NULL REFERENCES batch_jobs(batch_id) ON DELETE CASCADE,
+    candidate_id            UUID        NOT NULL DEFAULT gen_random_uuid(),
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    status                  TEXT        NOT NULL DEFAULT 'queued'
+                                CHECK (status IN ('queued','extracting','scoring',
+                                                  'pre_filtered','completed','failed')),
+
+    -- Stage 1 output (M.7)
+    cosine_similarity_score FLOAT,
+
+    -- Stage 2 output (M.8) — stored as JSONB (UnifiedEvaluationSchema)
+    evaluation              JSONB,
+
+    -- Error details for failed candidates
+    error_log               TEXT,
+
+    filename                TEXT,
+
+    UNIQUE (batch_id, candidate_id)
+);
+
+ALTER TABLE candidate_evaluations ADD COLUMN IF NOT EXISTS filename TEXT;
+
+DROP TRIGGER IF EXISTS candidate_evaluations_updated_at ON candidate_evaluations;
+CREATE TRIGGER candidate_evaluations_updated_at
+    BEFORE UPDATE ON candidate_evaluations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Index to speed up leaderboard queries (ORDER BY overall_score DESC)
+CREATE INDEX IF NOT EXISTS idx_candidate_eval_score
+    ON candidate_evaluations ((evaluation->>'overall_score') DESC NULLS LAST);
+
+-- Index for batch status polling aggregate queries
+CREATE INDEX IF NOT EXISTS idx_candidate_eval_batch
+    ON candidate_evaluations (batch_id, status);

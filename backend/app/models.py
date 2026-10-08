@@ -1,0 +1,198 @@
+"""
+models.py — Shared Pydantic request/response schemas used across the API.
+
+These models define the contract between the frontend and backend,
+and the internal data shapes passed between pipeline stages.
+"""
+from __future__ import annotations
+
+import enum
+from typing import List, Optional
+from pydantic import BaseModel, Field
+
+
+# ─── Enums ────────────────────────────────────────────────────────────────────
+
+class UserRole(str, enum.Enum):
+    candidate = "candidate"
+    recruiter = "recruiter"
+    admin = "admin"
+
+
+class BatchStatus(str, enum.Enum):
+    queued = "queued"
+    extracting = "extracting"
+    scoring = "scoring"
+    pre_filtered = "pre_filtered"
+    completed = "completed"
+    failed = "failed"
+
+
+# ─── Auth (M.2) ───────────────────────────────────────────────────────────────
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str = Field(..., min_length=8)
+    role: UserRole
+
+    @staticmethod
+    def check_password_strength(password: str) -> dict:
+        """Return strength info dict. Used by both backend validation and the /password-strength endpoint."""
+        checks = {
+            "min_length": len(password) >= 8,
+            "has_upper": any(c.isupper() for c in password),
+            "has_lower": any(c.islower() for c in password),
+            "has_digit": any(c.isdigit() for c in password),
+            "has_special": any(c in "!@#$%^&*()_+-=[]{}|;':\",./<>?`~" for c in password),
+        }
+        score = sum(checks.values())
+        if score <= 2:
+            level = "weak"
+        elif score <= 3:
+            level = "fair"
+        elif score <= 4:
+            level = "good"
+        else:
+            level = "strong"
+        return {"checks": checks, "score": score, "level": level, "is_acceptable": score >= 4}
+
+
+class PasswordStrengthResponse(BaseModel):
+    checks: dict
+    score: int
+    level: str
+    is_acceptable: bool
+
+
+class RegisterResponse(BaseModel):
+    message: str
+    otpauth_uri: str
+
+
+class LoginResponse(BaseModel):
+    message: str = "2FA code sent"
+    temp_token: str
+
+
+class VerifyRequest(BaseModel):
+    temp_token: str
+    code: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: UserRole
+    last_login_at: Optional[str] = None
+
+
+# ─── Password Reset ───────────────────────────────────────────────────────────
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+
+class PasswordResetResponse(BaseModel):
+    message: str
+
+
+# ─── Activity Logs ────────────────────────────────────────────────────────────
+
+class ActivityLogEntry(BaseModel):
+    id: str
+    user_id: Optional[str] = None
+    email: Optional[str] = None
+    action: str
+    detail: Optional[str] = None
+    ip_address: Optional[str] = None
+    created_at: str
+
+
+class ActivityLogsResponse(BaseModel):
+    logs: List[ActivityLogEntry]
+
+
+# ─── Upload responses (M.3 / M.9) ────────────────────────────────────────────
+
+class UploadResponse(BaseModel):
+    batch_id: str
+    status_url: str
+
+
+# ─── Person 2 processing preview (M.3 – M.6) ────────────────────────────────
+
+class ProcessingFileResult(BaseModel):
+    """Human-readable result for one file in the ingestion/sanitisation flow."""
+
+    filename: str
+    status: str
+    validation_passed: bool
+    extracted_text: Optional[str] = None
+    anonymised_text: Optional[str] = None
+    safety_passed: Optional[bool] = None
+    safety_reason: Optional[str] = None
+    error: Optional[str] = None
+
+
+class ProcessingResponse(BaseModel):
+    """Synchronous preview response used by the Person 2 processing UI."""
+
+    input_type: str
+    total_files: int
+    accepted_files: int
+    rejected_files: int
+    files: List[ProcessingFileResult]
+
+
+# ─── Status polling (M.9) ────────────────────────────────────────────────────
+
+class BatchStatusResponse(BaseModel):
+    batch_id: str
+    status: BatchStatus
+    total_files: int = 0
+    processed_files: int = 0
+    failed_files: int = 0
+    pre_filtered_count: int = 0
+    progress_percentage: float = 0.0
+
+
+# ─── Evaluation result (M.7 / M.8) ───────────────────────────────────────────
+
+class UnifiedEvaluationSchema(BaseModel):
+    """
+    Structured output produced by the Gemini Flash LLM (Stage 2).
+    Persisted as JSONB in the candidate_evaluations table.
+    """
+    overall_score: float = Field(..., ge=0.0, le=100.0)
+    skill_match_score: float = Field(..., ge=0.0, le=100.0)
+    matching_skills: List[str]
+    missing_skills: List[str]
+    work_experience_score: float = Field(..., ge=0.0, le=100.0)
+    verdict_summary: str
+
+
+class CandidateResult(BaseModel):
+    candidate_id: str
+    overall_score: float
+    skill_match_score: float
+    work_experience_score: float
+    matching_skills: List[str]
+    missing_skills: List[str]
+    verdict_summary: str
+    cosine_similarity_score: float
+    status: BatchStatus
+
+
+class BatchResultsResponse(BaseModel):
+    batch_id: str
+    results: List[CandidateResult]
