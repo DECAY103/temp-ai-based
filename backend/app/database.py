@@ -7,19 +7,33 @@ TODO (Person 3 — M.9):
   - Call close_db() in the FastAPI lifespan shutdown.
   - Use get_pool() in repositories to obtain a connection.
 """
+import logging
 import asyncpg
 from pathlib import Path
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 _pool: asyncpg.Pool | None = None
 
 
 async def init_db() -> None:
-    """Create the asyncpg connection pool."""
+    """Create the asyncpg connection pool with timeouts and diagnostic logging."""
     global _pool
-    # TODO (Person 3 — M.9): Tune min_size / max_size for production load.
-    _pool = await asyncpg.create_pool(settings.database_url, min_size=2, max_size=10)
+    target = settings.database_url.split("@")[-1] if "@" in settings.database_url else "configured DB"
+    logger.info("Connecting to database pool at %s...", target)
+    try:
+        _pool = await asyncpg.create_pool(
+            settings.database_url,
+            min_size=1,
+            max_size=10,
+            command_timeout=60,
+            timeout=15,
+        )
+        logger.info("Database connection pool established successfully.")
+    except Exception as exc:
+        logger.error("Failed to connect to database at %s: %s", target, exc)
+        raise
 
 
 async def close_db() -> None:

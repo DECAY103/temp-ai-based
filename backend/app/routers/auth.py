@@ -5,6 +5,7 @@ OTP_MODE env var controls which second factor is used:
   totp   — the user scans a QR / provisioning URI into an authenticator app
 """
 from __future__ import annotations
+import asyncio
 from datetime import datetime, timedelta, timezone
 import hashlib
 import logging
@@ -58,10 +59,10 @@ def _hash_otp(code: str) -> str:
 
 # ─── SMTP helpers ────────────────────────────────────────────────────────────
 
-def _smtp_send(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
-    """Low-level SMTP send. Logs the content when SMTP is not configured."""
+def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+    """Synchronous low-level SMTP send. Runs inside a background thread pool."""
     if not settings.smtp_host:
-        logger.warning("SMTP not configured. Would send to %s — %s: %s", to_email, subject, body_text)
+        logger.warning("[SMTP] Host not configured. Code/message for %s: %s", to_email, body_text)
         return
     msg = MIMEMultipart("alternative") if body_html else MIMEText(body_text, "plain")
     msg["Subject"] = subject
@@ -70,14 +71,29 @@ def _smtp_send(to_email: str, subject: str, body_text: str, body_html: str | Non
     if body_html:
         msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-        server.starttls()
-        server.login(settings.smtp_user, settings.smtp_password)
-        server.send_message(msg)
+
+    # Strict timeout (5s) prevents Vercel proxy timeouts if SMTP server hangs
+    timeout_secs = 5.0
+    is_ssl = (settings.smtp_port == 465)
+    logger.info("[SMTP] Connecting to %s:%s (SSL=%s, timeout=%ss)...", settings.smtp_host, settings.smtp_port, is_ssl, timeout_secs)
+
+    if is_ssl:
+        with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=timeout_secs) as server:
+            if settings.smtp_user and settings.smtp_password:
+                server.login(settings.smtp_user, settings.smtp_password)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=timeout_secs) as server:
+            server.starttls()
+            if settings.smtp_user and settings.smtp_password:
+                server.login(settings.smtp_user, settings.smtp_password)
+            server.send_message(msg)
+
+    logger.info("[SMTP] Successfully sent email to %s (subject: %s)", to_email, subject)
 
 
-def _send_otp_email(to_email: str, code: str) -> None:
-    """Email the 6-digit OTP code to the user."""
+async def _send_otp_email(to_email: str, code: str) -> None:
+    """Email the 6-digit OTP code to the user in a non-blocking thread."""
     expire_min = settings.smtp_otp_expire_minutes
     plain = (
         f"Your Resume Screening login code is: {code}\n\n"
@@ -95,20 +111,24 @@ def _send_otp_email(to_email: str, code: str) -> None:
       </p>
     </div>
     """
-    _smtp_send(to_email, "Your Resume Screening sign-in code", plain, html)
+    await asyncio.to_thread(_smtp_send_sync, to_email, "Your Resume Screening sign-in code", plain, html)
 
 
-def _send_reset_email(to_email: str, reset_url: str) -> None:
-    """Send password reset email via SMTP. Fails silently if SMTP is not configured."""
+async def _send_reset_email(to_email: str, reset_url: str) -> None:
+    """Send password reset email via SMTP asynchronously."""
     expire_min = settings.password_reset_expire_minutes
     plain = (
         f"Click the link below to reset your password. This link expires in {expire_min} minutes.\n\n"
         f"{reset_url}\n\nIf you did not request this, ignore this email."
     )
+    logger.info("[Password Reset] Reset link for %s: %s", to_email, reset_url)
     try:
-        _smtp_send(to_email, "Password Reset — Resume Screening", plain)
-    except Exception:
-        pass  # Don't expose SMTP errors
+        await asyncio.wait_for(
+            asyncio.to_thread(_smtp_send_sync, to_email, "Password Reset — Resume Screening", plain),
+            timeout=5.0,
+        )
+    except Exception as exc:
+        logger.warning("[Password Reset] Could not deliver email to %s: %s", to_email, exc)
 
 
 # ─── Password Strength (client-side check endpoint) ──────────────────────────
@@ -173,13 +193,21 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         plain_code = f"{secrets.randbelow(1_000_000):06d}"
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.smtp_otp_expire_minutes)
         await repository.create_email_otp(str(user["id"]), _hash_otp(plain_code), expires_at)
+
+        # Always log the OTP in server logs so it is visible in Render logs even if SMTP fails
+        logger.info("[2FA OTP] Generated code for %s: %s (expires in %sm)", user["email"], plain_code, settings.smtp_otp_expire_minutes)
+
         try:
-            _send_otp_email(user["email"], plain_code)
+            await asyncio.wait_for(_send_otp_email(user["email"], plain_code), timeout=6.0)
         except Exception as exc:
             logger.error("Failed to send OTP email to %s: %s", user["email"], exc)
             # Surface the error only when SMTP is expected to be configured
             if settings.smtp_host:
-                raise HTTPException(status_code=503, detail="Could not send verification email. Please try again.") from exc
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check SMTP settings on Render or retrieve your login code from server logs."
+                ) from exc
+
         return LoginResponse(
             message=f"A 6-digit code has been sent to {user['email']}. Enter it below.",
             temp_token=token,
@@ -241,7 +269,7 @@ async def forgot_password(body: PasswordResetRequest, request: Request) -> Passw
         await repository.create_password_reset_token(str(user["id"]), token, expires_at)
         reset_url = f"{settings.frontend_url}/auth/reset-password?token={token}"
         try:
-            _send_reset_email(body.email, reset_url)
+            await _send_reset_email(body.email, reset_url)
         except Exception:
             pass  # Don't expose SMTP errors
         await repository.log_activity("password_reset_requested", user_id=str(user["id"]), email=body.email, ip_address=ip, user_agent=ua)

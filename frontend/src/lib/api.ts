@@ -57,21 +57,99 @@ export interface ProcessingResult {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      // TODO (Person 1 — M.2): Attach JWT here.
-      // Authorization: `Bearer ${getToken()}`,
-      ...init?.headers,
-    },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      credentials: "include",
+      headers: {
+        ...init?.headers,
+      },
+      ...init,
+    });
+  } catch (netErr: unknown) {
+    const msg = netErr instanceof Error ? netErr.message : "Network error";
+    throw new Error(`Could not connect to backend (${msg}). Render may be sleeping or NEXT_PUBLIC_API_URL is invalid.`);
+  }
+
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(body || res.statusText);
+    let errorMessage = res.statusText;
+    try {
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        if (json.detail) {
+          errorMessage = typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail);
+        } else {
+          errorMessage = text;
+        }
+      } catch {
+        if (res.status === 504 || text.includes("504") || text.includes("Gateway Time-out")) {
+          errorMessage = "Gateway Timeout (504): Render backend took too long to respond. On the free tier, Render spins down after 15 minutes of inactivity and takes ~50s to wake up. Please wait 30 seconds and try again.";
+        } else if (res.status === 502 || text.includes("502") || text.includes("Bad Gateway")) {
+          errorMessage = "Bad Gateway (502): Cannot reach Render backend. Check your Render deployment status and ensure NEXT_PUBLIC_API_URL in Vercel is set correctly.";
+        } else {
+          errorMessage = text || res.statusText;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errorMessage || `Request failed with HTTP status ${res.status}`);
   }
   return res.json() as Promise<T>;
 }
+
+// ─── Health API ───────────────────────────────────────────────────────────────
+
+export interface HealthStatus {
+  status: "ok" | "degraded" | "error" | "waking";
+  database?: string;
+  otp_mode?: string;
+  smtp_configured?: boolean;
+  smtp_host?: string;
+  latencyMs?: number;
+  message?: string;
+}
+
+export const healthApi = {
+  check: async (timeoutMs = 12000): Promise<HealthStatus> => {
+    const start = Date.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(`${BASE}/health`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      const latency = Date.now() - start;
+
+      if (!res.ok) {
+        if (res.status === 504 || res.status === 502) {
+          return { status: "waking", latencyMs: latency, message: "Backend is cold-starting on Render (~50s)..." };
+        }
+        return { status: "error", latencyMs: latency, message: `HTTP ${res.status}: ${res.statusText}` };
+      }
+      const data = await res.json();
+      return {
+        status: data.status === "ok" ? "ok" : "degraded",
+        database: data.database,
+        otp_mode: data.otp_mode,
+        smtp_configured: data.smtp_configured,
+        smtp_host: data.smtp_host,
+        latencyMs: latency,
+      };
+    } catch (err: unknown) {
+      const latency = Date.now() - start;
+      const isAbort = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
+      return {
+        status: isAbort ? "waking" : "error",
+        latencyMs: latency,
+        message: isAbort ? "Backend is cold-starting on Render (~50s)..." : (err instanceof Error ? err.message : "Offline"),
+      };
+    }
+  },
+};
 
 // ─── Auth API (M.2) ───────────────────────────────────────────────────────────
 

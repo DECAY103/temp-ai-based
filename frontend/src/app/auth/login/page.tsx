@@ -138,15 +138,34 @@ export default function LoginPage() {
                 </select>
               </div>
             )}
-            {error && <p className="message error-message" role="alert">{error}</p>}
+            {error && (
+              <div className="auth-error-box" role="alert">
+                <p className="message error-message">{error}</p>
+                {(error.includes("504") || error.includes("Timeout") || error.includes("waking")) && (
+                  <button
+                    type="button"
+                    className="secondary btn-sm"
+                    style={{ marginTop: 8, width: "100%" }}
+                    onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
+                  >
+                    🔄 Retry Login (after backend wakes)
+                  </button>
+                )}
+              </div>
+            )}
             <button
               className="primary auth-submit-btn"
               id="login-submit"
               type="submit"
               disabled={registerDisabled || loading}
             >
-              {loading ? "Please wait…" : registerMode ? "Create account" : "Continue →"}
+              {loading ? "Connecting to backend…" : registerMode ? "Create account" : "Continue →"}
             </button>
+            {loading && (
+              <p className="auth-cold-start-note">
+                ⏳ If your Render backend is cold-starting, this may take 30–50 seconds on the first request.
+              </p>
+            )}
           </form>
         )}
 
