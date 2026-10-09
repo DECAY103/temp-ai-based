@@ -1,0 +1,14 @@
+{
+  "title": "Backend Developer",
+  "required_skills": [
+    "Python",
+    "FastAPI",
+    "PostgreSQL",
+    "REST APIs",
+    "SQL",
+    "Git",
+    "Unit Testing",
+    "Docker"
+  ],
+  "minimum_experience_years": 0
+}

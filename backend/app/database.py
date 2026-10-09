@@ -44,13 +44,33 @@ async def close_db() -> None:
         _pool = None
 
 
+import time
+
 async def run_migrations() -> None:
-    """Apply all idempotent migration scripts on startup, in sorted order."""
+    """Apply migrations and log execution times."""
     pool = get_pool()
     migrations_dir = Path(__file__).parent / "persistence" / "migrations"
+
     async with pool.acquire() as conn:
         for sql_file in sorted(migrations_dir.glob("*.sql")):
-            await conn.execute(sql_file.read_text())
+            start = time.monotonic()
+            logger.info("Starting migration: %s", sql_file.name)
+
+            try:
+                await conn.execute(sql_file.read_text())
+            except Exception:
+                logger.exception(
+                    "Migration %s failed after %.1f seconds",
+                    sql_file.name,
+                    time.monotonic() - start,
+                )
+                raise
+
+            logger.info(
+                "Migration %s completed in %.1f seconds",
+                sql_file.name,
+                time.monotonic() - start,
+            )
 
 
 def get_pool() -> asyncpg.Pool:
