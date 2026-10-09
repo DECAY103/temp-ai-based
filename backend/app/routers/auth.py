@@ -14,6 +14,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import httpx
 import pyotp
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from jose import JWTError, jwt
@@ -57,10 +58,51 @@ def _hash_otp(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-# ─── SMTP helpers ────────────────────────────────────────────────────────────
+# ─── Email Delivery (Resend HTTPS API + SMTP Fallback) ───────────────────────
+
+def _is_email_configured() -> bool:
+    """True if either Resend API key or SMTP host is configured."""
+    return bool(settings.resend_api_key.strip() or settings.smtp_host.strip())
+
+
+async def _send_via_resend(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+    """Send an email using Resend's HTTPS REST API (api.resend.com/emails)."""
+    api_key = settings.resend_api_key.strip()
+    from_email = settings.resend_from_email.strip() or "Resume Screening <onboarding@resend.dev>"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "ResumeScreening-FastAPI/1.0",
+    }
+    payload: dict = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": subject,
+        "text": body_text,
+    }
+    if body_html:
+        payload["html"] = body_html
+
+    logger.info("[Resend] Sending email to %s (from: %s, subject: %s)...", to_email, from_email, subject)
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        resp = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
+        if resp.status_code >= 400:
+            error_msg = resp.text
+            try:
+                data = resp.json()
+                error_msg = data.get("message") or data.get("name") or resp.text
+            except Exception:
+                pass
+            logger.error("[Resend] API returned HTTP %s: %s", resp.status_code, error_msg)
+            raise RuntimeError(f"Resend API error ({resp.status_code}): {error_msg}")
+
+        result = resp.json()
+        logger.info("[Resend] Successfully delivered email to %s (id: %s)", to_email, result.get("id"))
+
 
 def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
-    """Synchronous low-level SMTP send. Runs inside a background thread pool."""
+    """Synchronous SMTP fallback. Runs inside an asyncio thread pool."""
     if not settings.smtp_host:
         logger.warning("[SMTP] Host not configured. Code/message for %s: %s", to_email, body_text)
         return
@@ -72,7 +114,6 @@ def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str 
         msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
 
-    # Strict timeout (5s) prevents Vercel proxy timeouts if SMTP server hangs
     timeout_secs = 5.0
     is_ssl = (settings.smtp_port == 465)
     logger.info("[SMTP] Connecting to %s:%s (SSL=%s, timeout=%ss)...", settings.smtp_host, settings.smtp_port, is_ssl, timeout_secs)
@@ -89,11 +130,29 @@ def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str 
                 server.login(settings.smtp_user, settings.smtp_password)
             server.send_message(msg)
 
-    logger.info("[SMTP] Successfully sent email to %s (subject: %s)", to_email, subject)
+    logger.info("[SMTP] Successfully sent email to %s", to_email)
+
+
+async def _send_email(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+    """Unified email dispatcher:
+    1. Uses Resend HTTPS API if RESEND_API_KEY is configured (recommended).
+    2. Falls back to SMTP if SMTP_HOST is configured.
+    3. Otherwise logs to console (local dev mode).
+    """
+    if settings.resend_api_key.strip():
+        await _send_via_resend(to_email, subject, body_text, body_html)
+        return
+
+    if settings.smtp_host.strip():
+        logger.info("[Email] RESEND_API_KEY not provided; using legacy SMTP fallback...")
+        await asyncio.to_thread(_smtp_send_sync, to_email, subject, body_text, body_html)
+        return
+
+    logger.warning("[Email] Neither Resend nor SMTP configured. Code/link for %s:\n%s", to_email, body_text)
 
 
 async def _send_otp_email(to_email: str, code: str) -> None:
-    """Email the 6-digit OTP code to the user in a non-blocking thread."""
+    """Email the 6-digit OTP code to the user."""
     expire_min = settings.smtp_otp_expire_minutes
     plain = (
         f"Your Resume Screening login code is: {code}\n\n"
@@ -101,34 +160,42 @@ async def _send_otp_email(to_email: str, code: str) -> None:
         "If you did not attempt to sign in, you can safely ignore this email."
     )
     html = f"""
-    <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px">
-      <p style="margin:0 0 8px;color:#315247;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Resume Screening</p>
-      <h1 style="margin:0 0 20px;font-size:1.6rem;color:#1f2933;letter-spacing:-.03em">Your sign-in code</h1>
-      <div style="display:inline-block;padding:18px 32px;background:#f3f6f4;border-radius:10px;font-size:2.2rem;font-weight:800;letter-spacing:.18em;color:#315247">{code}</div>
-      <p style="margin:20px 0 0;color:#667085;font-size:.9rem;line-height:1.6">
+    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0">
+      <p style="margin:0 0 8px;color:#4f46e5;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Resume Screening</p>
+      <h1 style="margin:0 0 16px;font-size:1.5rem;color:#0f172a;letter-spacing:-0.02em">Your sign-in code</h1>
+      <p style="margin:0 0 20px;color:#475569;font-size:0.95rem;line-height:1.5">Use the 6-digit one-time code below to complete your sign-in:</p>
+      <div style="display:inline-block;padding:16px 32px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:2rem;font-weight:800;letter-spacing:0.2em;color:#4f46e5;text-align:center">{code}</div>
+      <p style="margin:24px 0 0;color:#64748b;font-size:0.85rem;line-height:1.6">
         This code expires in <strong>{expire_min} minutes</strong>.<br>
-        If you did not try to sign in, ignore this email.
+        If you did not request this, you can safely ignore this message.
       </p>
     </div>
     """
-    await asyncio.to_thread(_smtp_send_sync, to_email, "Your Resume Screening sign-in code", plain, html)
+    await _send_email(to_email, "Your Resume Screening sign-in code", plain, html)
 
 
 async def _send_reset_email(to_email: str, reset_url: str) -> None:
-    """Send password reset email via SMTP asynchronously."""
+    """Send password reset email."""
     expire_min = settings.password_reset_expire_minutes
     plain = (
         f"Click the link below to reset your password. This link expires in {expire_min} minutes.\n\n"
         f"{reset_url}\n\nIf you did not request this, ignore this email."
     )
+    html = f"""
+    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0">
+      <p style="margin:0 0 8px;color:#4f46e5;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Resume Screening</p>
+      <h1 style="margin:0 0 16px;font-size:1.5rem;color:#0f172a;letter-spacing:-0.02em">Reset your password</h1>
+      <p style="margin:0 0 24px;color:#475569;font-size:0.95rem;line-height:1.5">Click the button below to choose a new password for your account:</p>
+      <a href="{reset_url}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:0.95rem">Reset Password →</a>
+      <p style="margin:24px 0 0;color:#64748b;font-size:0.85rem;line-height:1.6">
+        This link expires in <strong>{expire_min} minutes</strong>.<br>
+        If button doesn't work, copy and paste this URL into your browser:<br>
+        <span style="font-size:0.8rem;word-break:break-all;color:#4f46e5">{reset_url}</span>
+      </p>
+    </div>
+    """
     logger.info("[Password Reset] Reset link for %s: %s", to_email, reset_url)
-    try:
-        await asyncio.wait_for(
-            asyncio.to_thread(_smtp_send_sync, to_email, "Password Reset — Resume Screening", plain),
-            timeout=5.0,
-        )
-    except Exception as exc:
-        logger.warning("[Password Reset] Could not deliver email to %s: %s", to_email, exc)
+    await _send_email(to_email, "Password Reset — Resume Screening", plain, html)
 
 
 # ─── Password Strength (client-side check endpoint) ──────────────────────────
@@ -198,14 +265,13 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         logger.info("[2FA OTP] Generated code for %s: %s (expires in %sm)", user["email"], plain_code, settings.smtp_otp_expire_minutes)
 
         try:
-            await asyncio.wait_for(_send_otp_email(user["email"], plain_code), timeout=6.0)
+            await asyncio.wait_for(_send_otp_email(user["email"], plain_code), timeout=8.0)
         except Exception as exc:
-            logger.error("Failed to send OTP email to %s: %s", user["email"], exc)
-            # Surface the error only when SMTP is expected to be configured
-            if settings.smtp_host:
+            logger.error("Failed to deliver OTP email to %s: %s", user["email"], exc)
+            if _is_email_configured():
                 raise HTTPException(
                     status_code=503,
-                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check SMTP settings on Render or retrieve your login code from server logs."
+                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check RESEND_API_KEY / email settings on Render or retrieve your login code from server logs."
                 ) from exc
 
         return LoginResponse(

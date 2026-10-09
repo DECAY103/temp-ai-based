@@ -28,7 +28,9 @@ sentence-transformers==3.0.1   # all-MiniLM-L6-v2 embeddings
 # ── AI — Stage 2 (M.8) ───────────────────────────────────────────────────────
 google-generativeai==0.7.2     # Gemini Flash API client
 
+# ── Email & HTTP Client ───────────────────────────────────────────────────────
+httpx==0.27.0                  # async HTTP client for Resend HTTPS API & tests
+
 # ── Dev / Testing ─────────────────────────────────────────────────────────────
 pytest==8.2.2
 pytest-asyncio==0.23.7
-httpx==0.27.0                  # async test client for FastAPI

@@ -84,12 +84,19 @@ async def health_check():
     except Exception as exc:
         db_detail = f"error: {str(exc)}"
 
+    email_delivery = "none"
+    if settings.resend_api_key:
+        email_delivery = "resend_https"
+    elif settings.smtp_host:
+        email_delivery = "smtp"
+
     return {
         "status": "ok" if db_connected else "degraded",
         "database": db_detail,
         "otp_mode": settings.otp_mode,
+        "email_delivery": email_delivery,
+        "resend_configured": bool(settings.resend_api_key),
         "smtp_configured": bool(settings.smtp_host),
-        "smtp_host": settings.smtp_host or "(not configured)",
-        "smtp_port": settings.smtp_port,
+        "email_from": settings.resend_from_email if settings.resend_api_key else settings.smtp_from_email,
         "llm_provider": settings.llm_provider,
     }

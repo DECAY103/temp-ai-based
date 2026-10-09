@@ -116,9 +116,15 @@ export function BackendStatus() {
             </div>
 
             <div className="backend-stat-row">
-              <span className="stat-name">SMTP Email</span>
+              <span className="stat-name">Email Delivery</span>
               <span className="stat-val">
-                {health?.smtp_configured ? "Configured ✓" : "Off (codes in logs)"}
+                {health?.email_delivery === "resend_https" ? (
+                  <span style={{ color: "#10b981", fontWeight: 600 }}>Resend HTTPS ✓</span>
+                ) : health?.email_delivery === "smtp" ? (
+                  <span style={{ color: "#3b82f6", fontWeight: 600 }}>SMTP Legacy ✓</span>
+                ) : (
+                  <span style={{ color: "#64748b" }}>Console logs only</span>
+                )}
               </span>
             </div>
 

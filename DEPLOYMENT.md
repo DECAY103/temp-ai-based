@@ -27,13 +27,19 @@ COOKIE_SECURE=true
 CORS_ORIGINS=https://your-vercel-site.vercel.app
 FRONTEND_URL=https://your-vercel-site.vercel.app
 
-# Email OTP (default)
+# Email Delivery (Resend HTTPS API — Recommended)
+RESEND_API_KEY=re_123456789...
+RESEND_FROM_EMAIL=Resume Screening <onboarding@resend.dev>
+
+# (Optional) Legacy SMTP fallback — only used if RESEND_API_KEY is not set
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASSWORD=your-gmail-app-password
+# SMTP_FROM_EMAIL=your-email@gmail.com
+
+# 2FA OTP Expiration (minutes)
 OTP_MODE=email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password   # Gmail App Password, not your real password
-SMTP_FROM_EMAIL=your-email@gmail.com
 SMTP_OTP_EXPIRE_MINUTES=10
 
 # LLM (optional — heuristic is free)

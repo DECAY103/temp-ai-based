@@ -105,8 +105,10 @@ export interface HealthStatus {
   status: "ok" | "degraded" | "error" | "waking";
   database?: string;
   otp_mode?: string;
+  email_delivery?: string;
+  resend_configured?: boolean;
   smtp_configured?: boolean;
-  smtp_host?: string;
+  email_from?: string;
   latencyMs?: number;
   message?: string;
 }
@@ -135,8 +137,10 @@ export const healthApi = {
         status: data.status === "ok" ? "ok" : "degraded",
         database: data.database,
         otp_mode: data.otp_mode,
+        email_delivery: data.email_delivery,
+        resend_configured: data.resend_configured,
         smtp_configured: data.smtp_configured,
-        smtp_host: data.smtp_host,
+        email_from: data.email_from,
         latencyMs: latency,
       };
     } catch (err: unknown) {

@@ -17,11 +17,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     password_reset_expire_minutes: int = 30
 
-    # OTP mode: "totp" (authenticator app) or "email" (SMTP one-time code)
+    # OTP mode: "totp" (authenticator app) or "email" (email one-time code)
     otp_mode: str = "email"
     smtp_otp_expire_minutes: int = 10
 
-    # SMTP (password reset emails AND email-OTP codes)
+    # Email Delivery: "resend" (recommended HTTPS API) or "smtp" (legacy fallback)
+    email_provider: str = "resend"
+    resend_api_key: str = ""
+    resend_from_email: str = "Resume Screening <onboarding@resend.dev>"
+
+    # SMTP fallback (if resend_api_key is not set)
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
