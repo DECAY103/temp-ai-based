@@ -63,6 +63,41 @@ async def update_password(user_id: str, new_password_hash: str) -> None:
         await conn.execute("UPDATE users SET password_hash=$1 WHERE id=$2::uuid", new_password_hash, user_id)
 
 
+# ─── Email OTP ────────────────────────────────────────────────────────────────
+
+async def create_email_otp(user_id: str, code_hash: str, expires_at) -> None:
+    """Invalidate any existing unused codes for the user then store the new one."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Invalidate stale codes
+            await conn.execute(
+                "UPDATE email_otp_codes SET used=TRUE WHERE user_id=$1::uuid AND used=FALSE",
+                user_id,
+            )
+            await conn.execute(
+                "INSERT INTO email_otp_codes (user_id,code,expires_at) VALUES ($1::uuid,$2,$3)",
+                user_id, code_hash, expires_at,
+            )
+
+
+async def get_valid_email_otp(user_id: str) -> Optional[dict]:
+    """Return the most recent unused, non-expired OTP row for the user."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id,code,expires_at FROM email_otp_codes WHERE user_id=$1::uuid AND used=FALSE AND expires_at>NOW() ORDER BY created_at DESC LIMIT 1",
+            user_id,
+        )
+    return dict(row) if row else None
+
+
+async def mark_email_otp_used(otp_id: str) -> None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("UPDATE email_otp_codes SET used=TRUE WHERE id=$1::uuid", otp_id)
+
+
 # ─── Activity Logs ────────────────────────────────────────────────────────────
 
 async def log_activity(

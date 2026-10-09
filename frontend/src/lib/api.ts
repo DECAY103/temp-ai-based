@@ -94,13 +94,13 @@ export interface ActivityLogEntry {
 
 export const authApi = {
   register: (email: string, password: string, role: "candidate" | "recruiter") =>
-    request<{ message: string; otpauth_uri: string }>("/auth/register", {
+    request<{ message: string; otpauth_uri: string; otp_mode: string }>("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, role }),
     }),
   login: (email: string, password: string) =>
-    request<{ temp_token: string }>("/auth/login", {
+    request<{ temp_token: string; message: string; otp_mode: string }>("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),

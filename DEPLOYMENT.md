@@ -1,5 +1,74 @@
 # Deployment Guide
 
+See the full guide at [deployment_guide.md](../../../.gemini/antigravity-ide/brain/33375919-4cb3-492b-a165-e03beca61e49/deployment_guide.md) or read below.
+
+## What is deployed
+
+The system has a Next.js frontend, a FastAPI worker/API, and PostgreSQL.
+
+**2FA:** Email OTP is the default (`OTP_MODE=email`). A 6-digit code is emailed after each successful password check. Set `OTP_MODE=totp` to revert to authenticator-app QR codes.
+
+**LLM:** `LLM_PROVIDER=heuristic` is free: deterministic rubric-keyword scoring with no external API. Set `LLM_PROVIDER=gemini` + `GEMINI_API_KEY` for Gemini Flash quality scoring.
+
+## Low-cost production deployment
+
+| Component | Service | Key setting |
+|-----------|---------|-------------|
+| PostgreSQL | Supabase free project | `DATABASE_URL` = direct connection string |
+| API/worker | Render | deploy `backend/Dockerfile`; port 8000 |
+| Frontend | Vercel | root dir `frontend`; set `NEXT_PUBLIC_API_URL` |
+
+## Backend environment variables (Render)
+
+```text
+DATABASE_URL=postgresql://...
+JWT_SECRET=<long random secret>
+COOKIE_SECURE=true
+CORS_ORIGINS=https://your-vercel-site.vercel.app
+FRONTEND_URL=https://your-vercel-site.vercel.app
+
+# Email OTP (default)
+OTP_MODE=email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password   # Gmail App Password, not your real password
+SMTP_FROM_EMAIL=your-email@gmail.com
+SMTP_OTP_EXPIRE_MINUTES=10
+
+# LLM (optional — heuristic is free)
+LLM_PROVIDER=heuristic
+# LLM_PROVIDER=gemini
+# GEMINI_API_KEY=<from aistudio.google.com>
+STAGE1_TOP_N=10
+```
+
+## Frontend — Vercel
+
+1. Add `NEXT_PUBLIC_API_URL=https://your-api.onrender.com` in Vercel env vars.
+2. Update `frontend/next.config.js`:
+
+```js
+const nextConfig = {
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` }];
+  },
+};
+module.exports = nextConfig;
+```
+
+## Local dev
+
+```bash
+cd backend && cp .env.example .env   # set DATABASE_URL + JWT_SECRET
+uvicorn main:app --reload
+
+cd frontend && npm install && npm run dev
+```
+
+Leave `SMTP_HOST=` blank locally — OTP codes print to the backend console log.
+
+
 ## What is deployed
 
 The system has a Next.js frontend, a FastAPI worker/API, and PostgreSQL. The

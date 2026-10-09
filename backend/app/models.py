@@ -71,12 +71,14 @@ class PasswordStrengthResponse(BaseModel):
 
 class RegisterResponse(BaseModel):
     message: str
-    otpauth_uri: str
+    otpauth_uri: str = ""
+    otp_mode: str = "email"  # "email" or "totp"
 
 
 class LoginResponse(BaseModel):
     message: str = "2FA code sent"
     temp_token: str
+    otp_mode: str = "email"  # "email" or "totp"
 
 
 class VerifyRequest(BaseModel):

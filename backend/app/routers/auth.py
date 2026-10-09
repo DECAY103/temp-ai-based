@@ -1,8 +1,16 @@
-"""Registration, password login, TOTP verification, JWT issuance, password reset, and activity logging."""
+"""Registration, password login, email-OTP / TOTP verification, JWT issuance, password reset, and activity logging.
+
+OTP_MODE env var controls which second factor is used:
+  email  — a 6-digit code is emailed after a successful password check  (default)
+  totp   — the user scans a QR / provisioning URI into an authenticator app
+"""
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
+import hashlib
+import logging
 import secrets
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import pyotp
@@ -23,10 +31,14 @@ from app.persistence import repository
 from app.security import CurrentUser, current_user
 from fastapi import Depends
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 # PBKDF2 avoids the passlib/bcrypt 5.x compatibility break and is available in
 # Python's standard hashlib on every deployment target.
 _passwords = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+
+_USE_EMAIL_OTP: bool = settings.otp_mode.lower() == "email"
+
 
 def _token(claims: dict, minutes: int) -> str:
     return jwt.encode({**claims, "exp": datetime.now(timezone.utc) + timedelta(minutes=minutes)}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
@@ -37,6 +49,66 @@ def _client_info(request: Request) -> tuple[str | None, str | None]:
     ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
     ua = request.headers.get("user-agent")
     return ip, ua
+
+
+def _hash_otp(code: str) -> str:
+    """SHA-256 hash of the plain OTP code — cheap, fast, reversible-compare."""
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+# ─── SMTP helpers ────────────────────────────────────────────────────────────
+
+def _smtp_send(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+    """Low-level SMTP send. Logs the content when SMTP is not configured."""
+    if not settings.smtp_host:
+        logger.warning("SMTP not configured. Would send to %s — %s: %s", to_email, subject, body_text)
+        return
+    msg = MIMEMultipart("alternative") if body_html else MIMEText(body_text, "plain")
+    msg["Subject"] = subject
+    msg["From"] = settings.smtp_from_email
+    msg["To"] = to_email
+    if body_html:
+        msg.attach(MIMEText(body_text, "plain"))
+        msg.attach(MIMEText(body_html, "html"))
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+        server.starttls()
+        server.login(settings.smtp_user, settings.smtp_password)
+        server.send_message(msg)
+
+
+def _send_otp_email(to_email: str, code: str) -> None:
+    """Email the 6-digit OTP code to the user."""
+    expire_min = settings.smtp_otp_expire_minutes
+    plain = (
+        f"Your Resume Screening login code is: {code}\n\n"
+        f"This code expires in {expire_min} minutes.\n"
+        "If you did not attempt to sign in, you can safely ignore this email."
+    )
+    html = f"""
+    <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px">
+      <p style="margin:0 0 8px;color:#315247;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Resume Screening</p>
+      <h1 style="margin:0 0 20px;font-size:1.6rem;color:#1f2933;letter-spacing:-.03em">Your sign-in code</h1>
+      <div style="display:inline-block;padding:18px 32px;background:#f3f6f4;border-radius:10px;font-size:2.2rem;font-weight:800;letter-spacing:.18em;color:#315247">{code}</div>
+      <p style="margin:20px 0 0;color:#667085;font-size:.9rem;line-height:1.6">
+        This code expires in <strong>{expire_min} minutes</strong>.<br>
+        If you did not try to sign in, ignore this email.
+      </p>
+    </div>
+    """
+    _smtp_send(to_email, "Your Resume Screening sign-in code", plain, html)
+
+
+def _send_reset_email(to_email: str, reset_url: str) -> None:
+    """Send password reset email via SMTP. Fails silently if SMTP is not configured."""
+    expire_min = settings.password_reset_expire_minutes
+    plain = (
+        f"Click the link below to reset your password. This link expires in {expire_min} minutes.\n\n"
+        f"{reset_url}\n\nIf you did not request this, ignore this email."
+    )
+    try:
+        _smtp_send(to_email, "Password Reset — Resume Screening", plain)
+    except Exception:
+        pass  # Don't expose SMTP errors
 
 
 # ─── Password Strength (client-side check endpoint) ──────────────────────────
@@ -60,6 +132,7 @@ async def register(body: RegisterRequest, request: Request) -> RegisterResponse:
         await repository.log_activity("register_failed_weak_password", email=body.email, detail=f"Password strength: {strength['level']}", ip_address=ip, user_agent=ua)
         raise HTTPException(status_code=400, detail=f"Password too weak ({strength['level']}). Must include uppercase, lowercase, digit, and special character.")
 
+    # totp_secret is always generated but only surfaced to the user in TOTP mode
     secret = pyotp.random_base32()
     try:
         user = await repository.create_user(body.email, _passwords.hash(body.password), body.role, secret)
@@ -68,7 +141,18 @@ async def register(body: RegisterRequest, request: Request) -> RegisterResponse:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     await repository.log_activity("register_success", user_id=str(user["id"]), email=body.email, detail=f"Role: {body.role.value}", ip_address=ip, user_agent=ua)
-    return RegisterResponse(message="Add this account to an authenticator app, then sign in.", otpauth_uri=pyotp.TOTP(secret).provisioning_uri(name=user["email"], issuer_name="Resume Screening"))
+
+    if _USE_EMAIL_OTP:
+        return RegisterResponse(
+            message="Account created. Sign in with your email and password — a one-time code will be emailed to you.",
+            otpauth_uri="",  # not used in email-OTP mode
+            otp_mode="email",
+        )
+    return RegisterResponse(
+        message="Add this account to an authenticator app, then sign in.",
+        otpauth_uri=pyotp.TOTP(secret).provisioning_uri(name=user["email"], issuer_name="Resume Screening"),
+        otp_mode="totp",
+    )
 
 
 # ─── Login ────────────────────────────────────────────────────────────────────
@@ -83,7 +167,30 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
 
     await repository.log_activity("login_password_ok", user_id=str(user["id"]), email=body.email, detail="Proceeding to 2FA", ip_address=ip, user_agent=ua)
     token = _token({"sub": str(user["id"]), "email": user["email"], "purpose": "2fa"}, settings.temp_token_expire_minutes)
-    return LoginResponse(message="Enter the current code from your authenticator app.", temp_token=token)
+
+    if _USE_EMAIL_OTP:
+        # Generate a 6-digit OTP, store its hash, and send via email
+        plain_code = f"{secrets.randbelow(1_000_000):06d}"
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.smtp_otp_expire_minutes)
+        await repository.create_email_otp(str(user["id"]), _hash_otp(plain_code), expires_at)
+        try:
+            _send_otp_email(user["email"], plain_code)
+        except Exception as exc:
+            logger.error("Failed to send OTP email to %s: %s", user["email"], exc)
+            # Surface the error only when SMTP is expected to be configured
+            if settings.smtp_host:
+                raise HTTPException(status_code=503, detail="Could not send verification email. Please try again.") from exc
+        return LoginResponse(
+            message=f"A 6-digit code has been sent to {user['email']}. Enter it below.",
+            temp_token=token,
+            otp_mode="email",
+        )
+
+    return LoginResponse(
+        message="Enter the current code from your authenticator app.",
+        temp_token=token,
+        otp_mode="totp",
+    )
 
 
 # ─── 2FA Verification ────────────────────────────────────────────────────────
@@ -98,9 +205,19 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
         await repository.log_activity("verify_failed_expired", detail="Verification session expired", ip_address=ip, user_agent=ua)
         raise HTTPException(status_code=401, detail="Verification session expired.") from exc
     user = await repository.get_user(claims["sub"])
-    if not user or not pyotp.TOTP(user["totp_secret"]).verify(body.code, valid_window=1):
-        await repository.log_activity("verify_failed_bad_code", user_id=claims["sub"], email=claims.get("email"), detail="Invalid authenticator code", ip_address=ip, user_agent=ua)
-        raise HTTPException(status_code=401, detail="Invalid authenticator code.")
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found.")
+
+    if _USE_EMAIL_OTP:
+        otp_row = await repository.get_valid_email_otp(claims["sub"])
+        if not otp_row or otp_row["code"] != _hash_otp(body.code):
+            await repository.log_activity("verify_failed_bad_code", user_id=claims["sub"], email=claims.get("email"), detail="Invalid or expired email OTP", ip_address=ip, user_agent=ua)
+            raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
+        await repository.mark_email_otp_used(str(otp_row["id"]))
+    else:
+        if not pyotp.TOTP(user["totp_secret"]).verify(body.code, valid_window=1):
+            await repository.log_activity("verify_failed_bad_code", user_id=claims["sub"], email=claims.get("email"), detail="Invalid authenticator code", ip_address=ip, user_agent=ua)
+            raise HTTPException(status_code=401, detail="Invalid authenticator code.")
 
     # Update last login and get previous value
     previous_login = await repository.update_last_login(claims["sub"])
@@ -112,26 +229,6 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
 
 
 # ─── Password Reset — Request ────────────────────────────────────────────────
-
-def _send_reset_email(to_email: str, reset_url: str) -> None:
-    """Send password reset email via SMTP. Fails silently if SMTP is not configured."""
-    if not settings.smtp_host:
-        # In development, just log the URL
-        import logging
-        logging.getLogger(__name__).warning("SMTP not configured. Reset URL: %s", reset_url)
-        return
-    msg = MIMEText(
-        f"Click the link below to reset your password. This link expires in {settings.password_reset_expire_minutes} minutes.\n\n{reset_url}\n\nIf you did not request this, ignore this email.",
-        "plain",
-    )
-    msg["Subject"] = "Password Reset — Resume Screening"
-    msg["From"] = settings.smtp_from_email
-    msg["To"] = to_email
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-        server.starttls()
-        server.login(settings.smtp_user, settings.smtp_password)
-        server.send_message(msg)
-
 
 @router.post("/forgot-password", response_model=PasswordResetResponse)
 async def forgot_password(body: PasswordResetRequest, request: Request) -> PasswordResetResponse:

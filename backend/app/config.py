@@ -17,7 +17,11 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     password_reset_expire_minutes: int = 30
 
-    # SMTP (password reset emails)
+    # OTP mode: "totp" (authenticator app) or "email" (SMTP one-time code)
+    otp_mode: str = "email"
+    smtp_otp_expire_minutes: int = 10
+
+    # SMTP (password reset emails AND email-OTP codes)
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
