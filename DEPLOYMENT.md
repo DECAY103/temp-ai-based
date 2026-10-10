@@ -27,11 +27,13 @@ COOKIE_SECURE=true
 CORS_ORIGINS=https://your-vercel-site.vercel.app
 FRONTEND_URL=https://your-vercel-site.vercel.app
 
-# Email Delivery (Resend HTTPS API — Recommended)
-RESEND_API_KEY=re_123456789...
-RESEND_FROM_EMAIL=Resume Screening <onboarding@resend.dev>
+# Email Delivery (Gmail HTTPS API — Recommended)
+GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-client-secret
+GMAIL_REFRESH_TOKEN=your-refresh-token
+GMAIL_FROM_EMAIL=yourname@gmail.com
 
-# (Optional) Legacy SMTP fallback — only used if RESEND_API_KEY is not set
+# (Optional) Legacy SMTP fallback — only used if Gmail credentials are not set
 # SMTP_HOST=smtp.gmail.com
 # SMTP_PORT=587
 # SMTP_USER=your-email@gmail.com

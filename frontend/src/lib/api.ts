@@ -106,7 +106,7 @@ export interface HealthStatus {
   database?: string;
   otp_mode?: string;
   email_delivery?: string;
-  resend_configured?: boolean;
+  gmail_configured?: boolean;
   smtp_configured?: boolean;
   email_from?: string;
   latencyMs?: number;
@@ -138,7 +138,7 @@ export const healthApi = {
         database: data.database,
         otp_mode: data.otp_mode,
         email_delivery: data.email_delivery,
-        resend_configured: data.resend_configured,
+        gmail_configured: data.gmail_configured,
         smtp_configured: data.smtp_configured,
         email_from: data.email_from,
         latencyMs: latency,

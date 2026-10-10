@@ -118,8 +118,8 @@ export function BackendStatus() {
             <div className="backend-stat-row">
               <span className="stat-name">Email Delivery</span>
               <span className="stat-val">
-                {health?.email_delivery === "resend_https" ? (
-                  <span style={{ color: "#10b981", fontWeight: 600 }}>Resend HTTPS ✓</span>
+                {health?.email_delivery === "gmail_https" ? (
+                  <span style={{ color: "#10b981", fontWeight: 600 }}>Gmail HTTPS ✓</span>
                 ) : health?.email_delivery === "smtp" ? (
                   <span style={{ color: "#3b82f6", fontWeight: 600 }}>SMTP Legacy ✓</span>
                 ) : (

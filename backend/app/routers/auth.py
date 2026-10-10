@@ -58,47 +58,99 @@ def _hash_otp(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-# ─── Email Delivery (Resend HTTPS API + SMTP Fallback) ───────────────────────
+# ─── Email Delivery (Gmail HTTPS API + SMTP Fallback) ────────────────────────
+
+def _is_gmail_configured() -> bool:
+    """True if Gmail OAuth2 credentials are fully configured."""
+    return bool(
+        settings.gmail_client_id.strip()
+        and settings.gmail_client_secret.strip()
+        and settings.gmail_refresh_token.strip()
+    )
+
 
 def _is_email_configured() -> bool:
-    """True if either Resend API key or SMTP host is configured."""
-    return bool(settings.resend_api_key.strip() or settings.smtp_host.strip())
+    """True if either Gmail API or SMTP host is configured."""
+    return bool(_is_gmail_configured() or settings.smtp_host.strip())
 
 
-async def _send_via_resend(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
-    """Send an email using Resend's HTTPS REST API (api.resend.com/emails)."""
-    api_key = settings.resend_api_key.strip()
-    from_email = settings.resend_from_email.strip() or "Resume Screening <onboarding@resend.dev>"
+async def _get_gmail_access_token() -> str:
+    """Exchange the stored refresh token for a fresh Gmail access token."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": settings.gmail_client_id.strip(),
+                "client_secret": settings.gmail_client_secret.strip(),
+                "refresh_token": settings.gmail_refresh_token.strip(),
+                "grant_type": "refresh_token",
+            },
+        )
+        if resp.status_code >= 400:
+            error_msg = resp.text
+            try:
+                error_msg = resp.json().get("error_description") or resp.text
+            except Exception:
+                pass
+            logger.error("[Gmail] Token refresh failed (HTTP %s): %s", resp.status_code, error_msg)
+            raise RuntimeError(f"Gmail OAuth token refresh failed ({resp.status_code}): {error_msg}")
+        return resp.json()["access_token"]
+
+
+async def _send_via_gmail(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+    """Send an email using the Gmail REST API over HTTPS (googleapis.com/gmail/v1).
+
+    Constructs a MIME message, base64url-encodes it, and POSTs to Gmail's
+    send endpoint. Authenticates via OAuth2 refresh-token flow.
+    """
+    import base64
+
+    from_email = settings.gmail_from_email.strip()
+    if not from_email:
+        raise RuntimeError("GMAIL_FROM_EMAIL is not configured")
+
+    # Build MIME message
+    if body_html:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(body_text, "plain"))
+        msg.attach(MIMEText(body_html, "html"))
+    else:
+        msg = MIMEText(body_text, "plain")
+
+    msg["To"] = to_email
+    msg["From"] = from_email
+    msg["Subject"] = subject
+
+    # Base64url-encode the raw MIME bytes (Gmail API requirement)
+    raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+
+    access_token = await _get_gmail_access_token()
 
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
-        "User-Agent": "ResumeScreening-FastAPI/1.0",
     }
-    payload: dict = {
-        "from": from_email,
-        "to": [to_email],
-        "subject": subject,
-        "text": body_text,
-    }
-    if body_html:
-        payload["html"] = body_html
+    payload = {"raw": raw_message}
 
-    logger.info("[Resend] Sending email to %s (from: %s, subject: %s)...", to_email, from_email, subject)
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        resp = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
+    logger.info("[Gmail] Sending email to %s (from: %s, subject: %s)...", to_email, from_email, subject)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            json=payload,
+            headers=headers,
+        )
         if resp.status_code >= 400:
             error_msg = resp.text
             try:
                 data = resp.json()
-                error_msg = data.get("message") or data.get("name") or resp.text
+                error_msg = data.get("error", {}).get("message") or resp.text
             except Exception:
                 pass
-            logger.error("[Resend] API returned HTTP %s: %s", resp.status_code, error_msg)
-            raise RuntimeError(f"Resend API error ({resp.status_code}): {error_msg}")
+            logger.error("[Gmail] API returned HTTP %s: %s", resp.status_code, error_msg)
+            raise RuntimeError(f"Gmail API error ({resp.status_code}): {error_msg}")
 
         result = resp.json()
-        logger.info("[Resend] Successfully delivered email to %s (id: %s)", to_email, result.get("id"))
+        logger.info("[Gmail] Successfully delivered email to %s (id: %s)", to_email, result.get("id"))
 
 
 def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
@@ -135,20 +187,20 @@ def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str 
 
 async def _send_email(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
     """Unified email dispatcher:
-    1. Uses Resend HTTPS API if RESEND_API_KEY is configured (recommended).
+    1. Uses Gmail HTTPS API if Gmail OAuth2 credentials are configured (recommended).
     2. Falls back to SMTP if SMTP_HOST is configured.
     3. Otherwise logs to console (local dev mode).
     """
-    if settings.resend_api_key.strip():
-        await _send_via_resend(to_email, subject, body_text, body_html)
+    if _is_gmail_configured():
+        await _send_via_gmail(to_email, subject, body_text, body_html)
         return
 
     if settings.smtp_host.strip():
-        logger.info("[Email] RESEND_API_KEY not provided; using legacy SMTP fallback...")
+        logger.info("[Email] Gmail not configured; using legacy SMTP fallback...")
         await asyncio.to_thread(_smtp_send_sync, to_email, subject, body_text, body_html)
         return
 
-    logger.warning("[Email] Neither Resend nor SMTP configured. Code/link for %s:\n%s", to_email, body_text)
+    logger.warning("[Email] Neither Gmail nor SMTP configured. Code/link for %s:\n%s", to_email, body_text)
 
 
 async def _send_otp_email(to_email: str, code: str) -> None:
@@ -271,7 +323,7 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
             if _is_email_configured():
                 raise HTTPException(
                     status_code=503,
-                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check RESEND_API_KEY / email settings on Render or retrieve your login code from server logs."
+                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN settings or retrieve your login code from server logs."
                 ) from exc
 
         return LoginResponse(

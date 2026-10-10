@@ -85,8 +85,11 @@ async def health_check():
         db_detail = f"error: {str(exc)}"
 
     email_delivery = "none"
-    if settings.resend_api_key:
-        email_delivery = "resend_https"
+    gmail_ready = bool(
+        settings.gmail_client_id and settings.gmail_client_secret and settings.gmail_refresh_token
+    )
+    if gmail_ready:
+        email_delivery = "gmail_https"
     elif settings.smtp_host:
         email_delivery = "smtp"
 
@@ -95,8 +98,8 @@ async def health_check():
         "database": db_detail,
         "otp_mode": settings.otp_mode,
         "email_delivery": email_delivery,
-        "resend_configured": bool(settings.resend_api_key),
+        "gmail_configured": gmail_ready,
         "smtp_configured": bool(settings.smtp_host),
-        "email_from": settings.resend_from_email if settings.resend_api_key else settings.smtp_from_email,
+        "email_from": settings.gmail_from_email if gmail_ready else settings.smtp_from_email,
         "llm_provider": settings.llm_provider,
     }

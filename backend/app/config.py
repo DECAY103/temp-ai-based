@@ -21,12 +21,14 @@ class Settings(BaseSettings):
     otp_mode: str = "email"
     smtp_otp_expire_minutes: int = 10
 
-    # Email Delivery: "resend" (recommended HTTPS API) or "smtp" (legacy fallback)
-    email_provider: str = "resend"
-    resend_api_key: str = ""
-    resend_from_email: str = "Resume Screening <onboarding@resend.dev>"
+    # Email Delivery: "gmail" (recommended HTTPS API) or "smtp" (legacy fallback)
+    email_provider: str = "gmail"
+    gmail_client_id: str = ""
+    gmail_client_secret: str = ""
+    gmail_refresh_token: str = ""
+    gmail_from_email: str = ""
 
-    # SMTP fallback (if resend_api_key is not set)
+    # SMTP fallback (if Gmail credentials are not set)
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
