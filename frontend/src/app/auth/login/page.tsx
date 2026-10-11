@@ -161,11 +161,6 @@ export default function LoginPage() {
             >
               {loading ? "Connecting to backend…" : registerMode ? "Create account" : "Continue →"}
             </button>
-            {loading && (
-              <p className="auth-cold-start-note">
-                ⏳ If your Render backend is cold-starting, this may take 30–50 seconds on the first request.
-              </p>
-            )}
           </form>
         )}
 

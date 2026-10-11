@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Cloud-native AI-based resume screening and ranking system",
 };
 
-import { BackendStatus } from "@/components/BackendStatus";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default function RootLayout({
   children,
@@ -16,17 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <header className="site-header">
-          <div className="site-header__inner">
-            <a className="brand" href="/"><span className="brand-mark">RS</span>Resume Screening</a>
-            <div className="header-actions">
-              <BackendStatus />
-              <nav className="site-nav" aria-label="Primary navigation">
-                <a href="/auth/login">Sign in</a>
-              </nav>
-            </div>
-          </div>
-        </header>
+        <SiteHeader />
         {children}
       </body>
     </html>

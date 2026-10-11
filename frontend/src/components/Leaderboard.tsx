@@ -55,16 +55,18 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
           <th>Skill Match</th>
           <th>Experience</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {completed.map((r, i) => (
-          <tr key={r.candidate_id} onClick={() => setSelected(r)}>
+          <tr key={r.candidate_id} onClick={() => setSelected(r)} style={{ cursor: "pointer" }}>
             <td>{i + 1}</td>
             <td className="table-score">{r.overall_score.toFixed(1)}</td>
             <td>{r.skill_match_score.toFixed(1)}</td>
             <td>{r.work_experience_score.toFixed(1)}</td>
             <td>{r.status}</td>
+            <td><span className="view-details-link">Click to view details →</span></td>
           </tr>
         ))}
       </tbody>

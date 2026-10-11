@@ -667,3 +667,18 @@ tbody tr:hover { background: var(--surface-soft); }
   margin-bottom: 12px;
 }
 
+/* ── "Click to view details" link in leaderboard rows ───────────────── */
+.view-details-link {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, text-decoration 0.2s ease;
+  cursor: pointer;
+}
+
+tr:hover .view-details-link {
+  opacity: 1;
+  text-decoration: underline;
+}
