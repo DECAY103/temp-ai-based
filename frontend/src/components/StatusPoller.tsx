@@ -81,7 +81,38 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
 
       <p className="field-help">{status.progress_percentage.toFixed(0)}% complete</p>
       <div className="progress"><span style={{ width: `${status.progress_percentage}%` }} /></div>
-      <div className="status-meta"><span>{status.processed_files} of {status.total_files} processed</span>{status.failed_files > 0 && <span>{status.failed_files} failed</span>}{status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}</div>
+      <div className="status-meta">
+        <span>{status.processed_files} of {status.total_files} processed</span>
+        {status.failed_files > 0 && <span style={{ color: "#dc2626", fontWeight: 600 }}>{status.failed_files} failed</span>}
+        {status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}
+      </div>
+
+      {status.failed_files > 0 && (
+        <div style={{ marginTop: "14px", padding: "12px", background: "rgba(239, 68, 68, 0.07)", border: "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#dc2626" }}>
+              ⚠️ {status.failed_files} résumé(s) failed evaluation
+            </span>
+          </div>
+          {status.error_logs && status.error_logs.length > 0 ? (
+            <div>
+              <span style={{ fontSize: "0.74rem", fontWeight: 600, color: "var(--muted, #64748b)", display: "block", marginBottom: "4px" }}>
+                Failure logs & details:
+              </span>
+              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#b91c1c", wordBreak: "break-word" }}>
+                {status.error_logs.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>
+              Evaluation failed during text processing or AI scoring. View ranked results to inspect individual candidate logs.
+            </p>
+          )}
+        </div>
+      )}
+
       {status.status === "failed" && <p className="message error-message status-complete">The batch could not complete. Check the selected files and try again.</p>}
       {status.status === "completed" && <div className="status-complete">{role === "recruiter" ? <Link className="primary" href={`/recruiter/leaderboard?batch_id=${batchId}`}>View ranked results</Link> : <p className="field-help">Your résumé has completed processing. The recruiter will review the result.</p>}</div>}
     </div>

@@ -21,6 +21,7 @@ export interface BatchStatus {
   failed_files: number;
   pre_filtered_count: number;
   progress_percentage: number;
+  error_logs?: string[];
 }
 
 export interface CandidateResult {
@@ -32,7 +33,9 @@ export interface CandidateResult {
   missing_skills: string[];
   verdict_summary: string;
   cosine_similarity_score: number;
-  status: "completed" | "pre_filtered";
+  status: "completed" | "pre_filtered" | "failed";
+  filename?: string | null;
+  error_log?: string | null;
 }
 
 export interface ProcessingFileResult {

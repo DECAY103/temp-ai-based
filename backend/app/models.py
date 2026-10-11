@@ -166,6 +166,7 @@ class BatchStatusResponse(BaseModel):
     failed_files: int = 0
     pre_filtered_count: int = 0
     progress_percentage: float = 0.0
+    error_logs: List[str] = []
 
 
 # ─── Evaluation result (M.7 / M.8) ───────────────────────────────────────────
@@ -193,6 +194,8 @@ class CandidateResult(BaseModel):
     verdict_summary: str
     cosine_similarity_score: float
     status: BatchStatus
+    filename: Optional[str] = None
+    error_log: Optional[str] = None
 
 
 class BatchResultsResponse(BaseModel):

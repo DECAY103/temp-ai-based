@@ -185,10 +185,11 @@ async def get_batch_status(batch_id: str) -> Optional[dict]:
     pool = get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            """SELECT b.batch_id,b.status,b.total_files,
+            """SELECT b.batch_id,b.status,b.total_files,b.error_log as batch_error_log,
                       COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) processed_files,
                       COUNT(c.id) FILTER (WHERE c.status='failed') failed_files,
-                      COUNT(c.id) FILTER (WHERE c.status='pre_filtered') pre_filtered_count
+                      COUNT(c.id) FILTER (WHERE c.status='pre_filtered') pre_filtered_count,
+                      ARRAY_REMOVE(ARRAY_AGG(DISTINCT c.error_log), NULL) as candidate_errors
                FROM batch_jobs b LEFT JOIN candidate_evaluations c ON c.batch_id=b.batch_id
                WHERE b.batch_id=$1::uuid GROUP BY b.batch_id""", batch_id)
     return dict(row) if row else None
@@ -225,7 +226,7 @@ async def upsert_candidate_evaluation(batch_id: str, candidate_id: str, status: 
 async def get_batch_results(batch_id: str) -> list[CandidateResult]:
     pool = get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch("SELECT candidate_id,status,cosine_similarity_score,evaluation,error_log FROM candidate_evaluations WHERE batch_id=$1::uuid ORDER BY (evaluation->>'overall_score')::float DESC NULLS LAST,cosine_similarity_score DESC", batch_id)
+        rows = await conn.fetch("SELECT candidate_id,status,cosine_similarity_score,evaluation,error_log,filename FROM candidate_evaluations WHERE batch_id=$1::uuid ORDER BY (evaluation->>'overall_score')::float DESC NULLS LAST,cosine_similarity_score DESC", batch_id)
     results: list[CandidateResult] = []
     for row in rows:
         value = row["evaluation"] or {}
@@ -236,6 +237,8 @@ async def get_batch_results(batch_id: str) -> list[CandidateResult]:
             overall_score=float(evaluation.get("overall_score", 0)), skill_match_score=float(evaluation.get("skill_match_score", 0)), work_experience_score=float(evaluation.get("work_experience_score", 0)),
             matching_skills=evaluation.get("matching_skills", []), missing_skills=evaluation.get("missing_skills", []),
             verdict_summary=evaluation.get("verdict_summary", "Not selected for detailed evaluation." if prefiltered else row["error_log"] or "Evaluation unavailable."),
+            filename=row["filename"],
+            error_log=row["error_log"],
         ))
     return results
 

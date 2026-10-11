@@ -40,6 +40,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
   const completed = useMemo(() => results.filter((r) => r.status === "completed").sort((a, b) => b[sortBy] - a[sortBy]), [results, sortBy]);
   const prefiltered = results.filter((r) => r.status === "pre_filtered");
+  const failed = useMemo(() => results.filter((r) => r.status === "failed"), [results]);
 
   if (loading) return <p>Loading results…</p>;
   if (error) return <p role="alert">{error}</p>;
@@ -72,6 +73,35 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
       </tbody>
     </table></div>}
     {prefiltered.length > 0 && <p className="pre-filter-note">{prefiltered.length} candidate{prefiltered.length === 1 ? " was" : "s were"} pre-filtered below the top-N cutoff.</p>}
+
+    {failed.length > 0 && (
+      <div style={{ marginTop: "28px", padding: "18px 20px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <h3 style={{ margin: 0, fontSize: "1rem", color: "#dc2626", fontWeight: 700 }}>
+            ⚠️ {failed.length} Failed Evaluation{failed.length === 1 ? "" : "s"} & Error Logs
+          </h3>
+        </div>
+        <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+          These files could not be evaluated by the pipeline. Inspect the specific error messages below to diagnose:
+        </p>
+        <div style={{ display: "grid", gap: "10px" }}>
+          {failed.map((f, i) => (
+            <div key={f.candidate_id || i} style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px", padding: "12px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <strong style={{ fontSize: "0.86rem" }}>{f.filename || `Candidate #${i + 1}`}</strong>
+                <span style={{ fontSize: "0.72rem", background: "rgba(239, 68, 68, 0.12)", color: "#b91c1c", padding: "2px 8px", borderRadius: "99px", fontWeight: 700 }}>
+                  Failed
+                </span>
+              </div>
+              <div style={{ background: "var(--surface-soft, #f8fafc)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--line, #e2e8f0)", fontFamily: "monospace", fontSize: "0.78rem", color: "#b91c1c", wordBreak: "break-word" }}>
+                {f.error_log || f.verdict_summary || "No specific error log recorded."}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     {selected && <div className="modal" role="dialog" aria-modal="true" aria-label="Candidate evaluation"><div><button className="secondary-button modal-close" onClick={() => setSelected(null)}>Close</button><p className="eyebrow">Candidate evaluation</p><h2>Score breakdown</h2><p>{selected.verdict_summary}</p><h3>Matching skills</h3><p>{selected.matching_skills.join(", ") || "None"}</p><h3>Missing skills</h3><p>{selected.missing_skills.join(", ") || "None"}</p><h3>Semantic similarity</h3><p>{selected.cosine_similarity_score.toFixed(3)}</p><a className="primary" href={`/api/jobs/${batchId}/candidates/${selected.candidate_id}/resume`} target="_blank">Open original résumé</a></div></div>}
     </section>
   );

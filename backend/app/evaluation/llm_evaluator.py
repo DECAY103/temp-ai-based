@@ -40,20 +40,37 @@ async def _gemini_evaluate(resume_text: str, rubric_text: str) -> UnifiedEvaluat
     return UnifiedEvaluationSchema.model_validate(json.loads(raw))
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 async def evaluate_candidate(candidate_id: str, resume_text: str, rubric_text: str) -> UnifiedEvaluationSchema:
     if settings.llm_provider.lower() in {"heuristic", "free", "local"}:
         return _heuristic_evaluate(resume_text, rubric_text)
+    
     last_error: Exception | None = None
-    for attempt in range(_MAX_RETRIES + 1):
-        try:
-            if settings.llm_provider.lower() == "gemini":
+    if settings.llm_provider.lower() == "gemini":
+        if not settings.gemini_api_key:
+            logger.warning("GEMINI_API_KEY is not set. Falling back to deterministic heuristic evaluator.")
+            fallback = _heuristic_evaluate(resume_text, rubric_text)
+            fallback.verdict_summary = f"[Heuristic mode: GEMINI_API_KEY not configured] {fallback.verdict_summary}"
+            return fallback
+
+        for attempt in range(_MAX_RETRIES + 1):
+            try:
                 return await _gemini_evaluate(resume_text, rubric_text)
-            raise ValueError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}")
-        except Exception as exc:
-            last_error = exc
-            if attempt < _MAX_RETRIES:
-                await asyncio.sleep(2 ** attempt)
-    raise ValueError(f"Evaluation failed for {candidate_id}: {last_error}")
+            except Exception as exc:
+                last_error = exc
+                logger.warning("Gemini evaluation attempt %d failed for %s: %s", attempt + 1, candidate_id, exc)
+                if attempt < _MAX_RETRIES:
+                    await asyncio.sleep(2 ** attempt)
+
+        logger.error("All Gemini evaluation attempts failed for %s: %s. Using heuristic evaluation fallback.", candidate_id, last_error)
+        fallback = _heuristic_evaluate(resume_text, rubric_text)
+        fallback.verdict_summary = f"[AI API Error: {last_error} — used keyword fallback] {fallback.verdict_summary}"
+        return fallback
+
+    raise ValueError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}")
 
 
 async def evaluate_batch(candidates: dict[str, str], rubric_text: str) -> dict[str, UnifiedEvaluationSchema]:

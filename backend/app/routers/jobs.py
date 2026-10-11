@@ -39,7 +39,21 @@ async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_ro
     if not row: raise HTTPException(404, "Batch not found.")
     total = int(row["total_files"])
     processed = int(row["processed_files"] or 0)
-    return BatchStatusResponse(batch_id=str(row["batch_id"]), status=BatchStatus(row["status"]), total_files=total, processed_files=processed, failed_files=int(row["failed_files"] or 0), pre_filtered_count=int(row["pre_filtered_count"] or 0), progress_percentage=round(100 * processed / total, 1) if total else 0)
+    errors: list[str] = []
+    if row.get("batch_error_log"):
+        errors.append(row["batch_error_log"])
+    if row.get("candidate_errors"):
+        errors.extend(row["candidate_errors"])
+    return BatchStatusResponse(
+        batch_id=str(row["batch_id"]),
+        status=BatchStatus(row["status"]),
+        total_files=total,
+        processed_files=processed,
+        failed_files=int(row["failed_files"] or 0),
+        pre_filtered_count=int(row["pre_filtered_count"] or 0),
+        progress_percentage=round(100 * processed / total, 1) if total else 0,
+        error_logs=errors,
+    )
 
 @router.get("/{batch_id}/results", response_model=BatchResultsResponse)
 async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> BatchResultsResponse:
