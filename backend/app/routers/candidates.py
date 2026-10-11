@@ -11,7 +11,7 @@ from app.security import CurrentUser, require_roles
 router = APIRouter()
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_202_ACCEPTED)
-async def upload_resume(background_tasks: BackgroundTasks, file: UploadFile = File(...), job_id: str = Form(...), user: CurrentUser = Depends(require_roles(UserRole.candidate, UserRole.admin))) -> UploadResponse:
+async def upload_resume(background_tasks: BackgroundTasks, file: UploadFile = File(...), job_id: str = Form(...), user: CurrentUser = Depends(require_roles(UserRole.candidate, UserRole.recruiter, UserRole.admin))) -> UploadResponse:
     data = await file.read()
     try: check_pdf(data)
     except ValidationError as exc: raise HTTPException(400, str(exc)) from exc
