@@ -30,6 +30,7 @@ interface StatusPollerProps {
 export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps) {
   const [status, setStatus] = useState<BatchStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -50,9 +51,32 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   if (error) return <p className="message error-message" role="alert">{error}</p>;
   if (!status) return <section className="status-card"><p className="eyebrow">Processing</p><h2>Preparing your files…</h2><p className="field-help">This page updates automatically.</p></section>;
 
+
+  function copyBatchId() {
+    navigator.clipboard.writeText(batchId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="status-card">
       <div className="status-heading"><div><p className="eyebrow">Batch processing</p><h2>{status.status === "completed" ? "Processing complete" : "Processing resumes"}</h2></div><span className="status-chip">{status.status}</span></div>
+
+      <div style={{ background: "var(--surface-soft, #f8fafc)", padding: "10px 14px", borderRadius: "8px", margin: "14px 0", border: "1px solid var(--line, #e2e8f0)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+        <div style={{ minWidth: 0 }}>
+          <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #64748b)", fontWeight: 700, display: "block" }}>Recruiter Batch ID</span>
+          <code style={{ fontSize: "0.82rem", color: "var(--text, #0f172a)", wordBreak: "break-all" }}>{batchId}</code>
+        </div>
+        <button
+          type="button"
+          className="ghost"
+          style={{ fontSize: "0.78rem", padding: "5px 10px", whiteSpace: "nowrap", flexShrink: 0 }}
+          onClick={copyBatchId}
+        >
+          {copied ? "Copied! ✓" : "Copy ID"}
+        </button>
+      </div>
+
       <p className="field-help">{status.progress_percentage.toFixed(0)}% complete</p>
       <div className="progress"><span style={{ width: `${status.progress_percentage}%` }} /></div>
       <div className="status-meta"><span>{status.processed_files} of {status.total_files} processed</span>{status.failed_files > 0 && <span>{status.failed_files} failed</span>}{status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}</div>

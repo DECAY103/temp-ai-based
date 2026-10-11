@@ -15,13 +15,39 @@ import { Leaderboard } from "@/components/Leaderboard";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { useState } from "react";
+
 function LeaderboardContent() {
   const params = useSearchParams();
   const batchId = params.get("batch_id") ?? "";
+  const [copied, setCopied] = useState(false);
+
+  function copyBatchId() {
+    if (!batchId) return;
+    navigator.clipboard.writeText(batchId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <main className="shell">
-      <h1>Candidate Leaderboard</h1>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+        <h1 style={{ margin: 0 }}>Candidate Leaderboard</h1>
+        {batchId && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--surface-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px", padding: "6px 12px" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", fontWeight: 600 }}>Batch ID:</span>
+            <code style={{ fontSize: "0.82rem", color: "var(--text, #0f172a)" }}>{batchId}</code>
+            <button
+              type="button"
+              className="ghost"
+              style={{ fontSize: "0.75rem", padding: "3px 8px", marginLeft: "4px" }}
+              onClick={copyBatchId}
+            >
+              {copied ? "Copied! ✓" : "Copy ID"}
+            </button>
+          </div>
+        )}
+      </div>
       {batchId ? <Leaderboard batchId={batchId} /> : <p role="alert">A batch ID is required.</p>}
     </main>
   );
