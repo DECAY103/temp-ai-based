@@ -371,6 +371,8 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
 
     access = _token({"sub": str(user["id"]), "email": user["email"], "role": user["role"]}, settings.jwt_expire_minutes)
     response.set_cookie("access_token", access, httponly=True, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
+    # Non-HttpOnly flag so frontend JS can detect the logged-in state
+    response.set_cookie("logged_in", "1", httponly=False, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
     return TokenResponse(access_token=access, role=user["role"], last_login_at=previous_login)
 
 

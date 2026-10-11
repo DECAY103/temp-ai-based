@@ -7,10 +7,11 @@ export function SiteHeader() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check for the access_token cookie to determine login state
+    // Check for the logged_in cookie to determine login state
+    // (access_token is HttpOnly and invisible to JS)
     const hasToken = document.cookie
       .split("; ")
-      .some((c) => c.startsWith("access_token="));
+      .some((c) => c.startsWith("logged_in="));
     setIsLoggedIn(hasToken);
   }, []);
 
