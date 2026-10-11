@@ -238,7 +238,20 @@ export const candidatesApi = {
 
 // ─── Jobs API (M.3 / M.9 / M.10) ────────────────────────────────────────────
 
+export interface JobSummary {
+  batch_id: string;
+  created_at: string;
+  status: string;
+  total_files: number;
+  candidate_count: number;
+  title: string;
+  upload_filename: string;
+}
+
 export const jobsApi = {
+  /** List recent recruiter job batches. */
+  listJobs: () => request<JobSummary[]>("/jobs"),
+
   /** Upload a ZIP batch + rubric. Returns batch_id. */
   uploadBatch: async (file: File, rubric: string): Promise<string> => {
     const form = new FormData();

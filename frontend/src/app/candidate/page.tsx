@@ -12,17 +12,28 @@
 
 import { UploadForm } from "@/components/UploadForm";
 import { StatusPoller } from "@/components/StatusPoller";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function CandidatePage() {
+function CandidatePortalContent() {
   const [batchId, setBatchId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const initialJobId = searchParams.get("job_id") || "";
 
   return (
     <main className="shell">
-      <header className="hero"><p className="eyebrow">Candidate portal</p><h1>Submit your résumé.</h1><p>Enter the recruiter batch ID and upload a PDF. Your résumé is anonymised before it is evaluated.</p></header>
+      <header className="hero">
+        <p className="eyebrow">Candidate portal</p>
+        <h1>Submit your résumé.</h1>
+        <p>
+          {initialJobId
+            ? "Your application is linked to the recruiter job batch. Your résumé is anonymised before it is evaluated."
+            : "Enter the recruiter batch ID and upload a PDF. Your résumé is anonymised before it is evaluated."}
+        </p>
+      </header>
       <div className={`split-layout${batchId ? " split-layout--has-result" : ""}`}>
         <div className="split-layout__upload">
-          <UploadForm role="candidate" onSuccess={(id) => setBatchId(id)} />
+          <UploadForm role="candidate" initialJobId={initialJobId} onSuccess={(id) => setBatchId(id)} />
         </div>
         {batchId && (
           <div className="split-layout__result">
@@ -31,5 +42,13 @@ export default function CandidatePage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function CandidatePage() {
+  return (
+    <Suspense fallback={<main className="shell"><p>Loading portal…</p></main>}>
+      <CandidatePortalContent />
+    </Suspense>
   );
 }

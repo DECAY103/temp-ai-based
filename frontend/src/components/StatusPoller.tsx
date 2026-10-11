@@ -64,7 +64,9 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
 
       <div style={{ background: "var(--surface-soft, #f8fafc)", padding: "10px 14px", borderRadius: "8px", margin: "14px 0", border: "1px solid var(--line, #e2e8f0)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ minWidth: 0 }}>
-          <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #64748b)", fontWeight: 700, display: "block" }}>Recruiter Batch ID</span>
+          <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #64748b)", fontWeight: 700, display: "block" }}>
+            {role === "candidate" ? "Candidate Submission ID" : "Recruiter Batch ID"}
+          </span>
           <code style={{ fontSize: "0.82rem", color: "var(--text, #0f172a)", wordBreak: "break-all" }}>{batchId}</code>
         </div>
         <button

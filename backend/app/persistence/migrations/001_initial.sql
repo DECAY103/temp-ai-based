@@ -86,7 +86,9 @@ CREATE TABLE IF NOT EXISTS candidate_evaluations (
     UNIQUE (batch_id, candidate_id)
 );
 
+ALTER TABLE batch_jobs ADD COLUMN IF NOT EXISTS parent_batch_id UUID;
 ALTER TABLE candidate_evaluations ADD COLUMN IF NOT EXISTS filename TEXT;
+ALTER TABLE candidate_evaluations ADD COLUMN IF NOT EXISTS resume_bytes BYTEA;
 
 DROP TRIGGER IF EXISTS candidate_evaluations_updated_at ON candidate_evaluations;
 CREATE TRIGGER candidate_evaluations_updated_at

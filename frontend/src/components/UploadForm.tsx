@@ -17,20 +17,25 @@
  */
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { jobsApi, candidatesApi } from "@/lib/api";
 
 interface UploadFormProps {
   role: "candidate" | "recruiter";
   onSuccess: (batchId: string) => void;
+  initialJobId?: string;
 }
 
-export function UploadForm({ role, onSuccess }: UploadFormProps) {
+export function UploadForm({ role, onSuccess, initialJobId = "" }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [jobId, setJobId] = useState("");
+  const [jobId, setJobId] = useState(initialJobId);
   const [rubric, setRubric] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialJobId) setJobId(initialJobId);
+  }, [initialJobId]);
 
   const expectedExtension = role === "candidate" ? ".pdf" : ".zip";
   const maximumBytes = (role === "candidate" ? 5 : 50) * 1024 * 1024;
@@ -94,7 +99,13 @@ export function UploadForm({ role, onSuccess }: UploadFormProps) {
         {file && <div className="file-selected"><strong>{file.name}</strong><span>{Math.max(1, Math.round(file.size / 1024))} KB selected</span></div>}
       </div>
       {role === "candidate" && (
-        <div><label className="field-label" htmlFor="job-id-input">Recruiter batch ID</label><input id="job-id-input" type="text" placeholder="Paste the recruiter’s batch ID" value={jobId} onChange={(e) => setJobId(e.target.value)} required /><p className="field-help">Ask the recruiter for the batch ID created with the job rubric.</p></div>
+        <div>
+          <label className="field-label" htmlFor="job-id-input">Recruiter batch ID</label>
+          <input id="job-id-input" type="text" placeholder="Paste the recruiter’s batch ID" value={jobId} onChange={(e) => setJobId(e.target.value)} required />
+          <p className="field-help">
+            {initialJobId ? "✓ Pre-filled from job application link." : "Ask the recruiter for the batch ID created with the job rubric."}
+          </p>
+        </div>
       )}
       {role === "recruiter" && (
         <div><label className="field-label" htmlFor="rubric-input">Job rubric</label><textarea id="rubric-input" placeholder={'{\n  "title": "Backend Developer",\n  "required_skills": ["Python", "FastAPI", "PostgreSQL"],\n  "minimum_experience_years": 2\n}'} value={rubric} onChange={(e) => setRubric(e.target.value)} required /><p className="field-help">Use valid JSON. The required skills are used for semantic ranking and the final evaluation.</p></div>

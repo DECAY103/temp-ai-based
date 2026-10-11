@@ -160,13 +160,19 @@ async def mark_reset_token_used(token: str) -> None:
         await conn.execute("UPDATE password_reset_tokens SET used=TRUE WHERE token=$1", token)
 
 
-async def create_batch_job(batch_id: str, total_files: int, rubric: Any, upload_bytes: bytes, upload_filename: str) -> None:
+async def create_batch_job(batch_id: str, total_files: int, rubric: Any, upload_bytes: bytes, upload_filename: str, parent_batch_id: str | None = None) -> None:
     pool = get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "INSERT INTO batch_jobs (batch_id,total_files,rubric,upload_bytes,upload_filename) VALUES ($1::uuid,$2,$3::jsonb,$4,$5)",
-            batch_id, total_files, _json(rubric), upload_bytes, upload_filename,
+            "INSERT INTO batch_jobs (batch_id,total_files,rubric,upload_bytes,upload_filename,parent_batch_id) VALUES ($1::uuid,$2,$3::jsonb,$4,$5,$6::uuid)",
+            batch_id, total_files, _json(rubric), upload_bytes, upload_filename, parent_batch_id,
         )
+
+
+async def increment_batch_total_files(batch_id: str) -> None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("UPDATE batch_jobs SET total_files=total_files+1 WHERE batch_id=$1::uuid", batch_id)
 
 
 async def update_batch_status(batch_id: str, status: BatchStatus, error_log: str | None = None) -> None:
@@ -202,17 +208,18 @@ async def list_recoverable_batches() -> list[dict]:
     return [dict(row) for row in rows]
 
 
-async def upsert_candidate_evaluation(batch_id: str, candidate_id: str, status: BatchStatus, cosine_score: float = 0.0, evaluation: Optional[UnifiedEvaluationSchema] = None, error_log: Optional[str] = None, filename: str | None = None) -> None:
+async def upsert_candidate_evaluation(batch_id: str, candidate_id: str, status: BatchStatus, cosine_score: float = 0.0, evaluation: Optional[UnifiedEvaluationSchema] = None, error_log: Optional[str] = None, filename: str | None = None, resume_bytes: bytes | None = None) -> None:
     pool = get_pool()
     payload = json.dumps(evaluation.model_dump()) if evaluation else None
     async with pool.acquire() as conn:
         await conn.execute(
-            """INSERT INTO candidate_evaluations (batch_id,candidate_id,status,cosine_similarity_score,evaluation,error_log,filename)
-               VALUES ($1::uuid,$2::uuid,$3,$4,$5::jsonb,$6,$7)
+            """INSERT INTO candidate_evaluations (batch_id,candidate_id,status,cosine_similarity_score,evaluation,error_log,filename,resume_bytes)
+               VALUES ($1::uuid,$2::uuid,$3,$4,$5::jsonb,$6,$7,$8)
                ON CONFLICT (batch_id,candidate_id) DO UPDATE SET status=EXCLUDED.status,
                cosine_similarity_score=EXCLUDED.cosine_similarity_score,evaluation=COALESCE(EXCLUDED.evaluation,candidate_evaluations.evaluation),
-               error_log=EXCLUDED.error_log,filename=COALESCE(EXCLUDED.filename,candidate_evaluations.filename)""",
-            batch_id, candidate_id, status.value, cosine_score, payload, error_log, filename)
+               error_log=EXCLUDED.error_log,filename=COALESCE(EXCLUDED.filename,candidate_evaluations.filename),
+               resume_bytes=COALESCE(EXCLUDED.resume_bytes,candidate_evaluations.resume_bytes)""",
+            batch_id, candidate_id, status.value, cosine_score, payload, error_log, filename, resume_bytes)
 
 
 async def get_batch_results(batch_id: str) -> list[CandidateResult]:
@@ -238,3 +245,39 @@ async def get_candidate_filename(batch_id: str, candidate_id: str) -> str | None
     async with pool.acquire() as conn:
         value = await conn.fetchval("SELECT filename FROM candidate_evaluations WHERE batch_id=$1::uuid AND candidate_id=$2::uuid", batch_id, candidate_id)
     return str(value) if value else None
+
+
+async def get_candidate_resume_bytes(batch_id: str, candidate_id: str) -> bytes | None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        value = await conn.fetchval("SELECT resume_bytes FROM candidate_evaluations WHERE batch_id=$1::uuid AND candidate_id=$2::uuid", batch_id, candidate_id)
+    return bytes(value) if value else None
+
+
+async def list_recent_batches(limit: int = 25) -> list[dict]:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """SELECT b.batch_id, b.created_at, b.status, b.total_files, b.rubric, b.upload_filename,
+                      COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) as candidate_count
+               FROM batch_jobs b
+               LEFT JOIN candidate_evaluations c ON c.batch_id = b.batch_id
+               WHERE b.parent_batch_id IS NULL
+               GROUP BY b.batch_id
+               ORDER BY b.created_at DESC
+               LIMIT $1""", limit)
+    results = []
+    for r in rows:
+        rub = r["rubric"] or {}
+        rubric_obj = json.loads(rub) if isinstance(rub, str) else rub
+        title = rubric_obj.get("title", "Untitled Job") if isinstance(rubric_obj, dict) else "Job Batch"
+        results.append({
+            "batch_id": str(r["batch_id"]),
+            "created_at": r["created_at"].isoformat() if r["created_at"] else "",
+            "status": r["status"],
+            "total_files": int(r["total_files"]),
+            "candidate_count": int(r["candidate_count"] or 0),
+            "title": title,
+            "upload_filename": r["upload_filename"] or "",
+        })
+    return results

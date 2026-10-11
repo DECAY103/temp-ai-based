@@ -13,6 +13,10 @@ from app.security import CurrentUser, require_roles
 
 router = APIRouter()
 
+@router.get("", response_model=list[dict])
+async def list_jobs(user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> list[dict]:
+    return await repository.list_recent_batches(limit=25)
+
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubric: str = Form(...), user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> UploadResponse:
     try:
@@ -46,8 +50,11 @@ async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_r
 
 @router.get("/{batch_id}/candidates/{candidate_id}/resume")
 async def download_original_resume(batch_id: str, candidate_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> Response:
-    context = await repository.get_batch_context(batch_id)
     filename = await repository.get_candidate_filename(batch_id, candidate_id)
+    raw_bytes = await repository.get_candidate_resume_bytes(batch_id, candidate_id)
+    if raw_bytes and filename:
+        return Response(raw_bytes, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
+    context = await repository.get_batch_context(batch_id)
     if not context or not filename: raise HTTPException(404, "Original resume not found.")
     if (context["upload_filename"] or "").lower().endswith(".zip"):
         with zipfile.ZipFile(io.BytesIO(context["upload_bytes"])) as archive:

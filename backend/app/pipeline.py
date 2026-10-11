@@ -43,19 +43,23 @@ def _process_file(name: str, payload: bytes) -> tuple[str | None, str | None]:
         return (None, str(exc))
 
 
-async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object) -> None:
+async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object, parent_batch_id: str | None = None) -> None:
     try:
         await repository.update_batch_status(batch_id, BatchStatus.extracting)
         files = await asyncio.to_thread(_files, payload, filename)
         clean: dict[str, str] = {}
+        file_map: dict[str, tuple[str, bytes]] = {}
         for name, item in files:
             candidate_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{batch_id}:{name}"))
+            file_map[candidate_id] = (name, item)
             text, error = await asyncio.to_thread(_process_file, name, item)
             if error or not text:
-                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.failed, error_log=error or "No usable text.", filename=name)
+                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.failed, error_log=error or "No usable text.", filename=name, resume_bytes=item)
+                if parent_batch_id:
+                    await repository.upsert_candidate_evaluation(parent_batch_id, candidate_id, BatchStatus.failed, error_log=error or "No usable text.", filename=name, resume_bytes=item)
             else:
                 clean[candidate_id] = text
-                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.extracting, filename=name)
+                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.extracting, filename=name, resume_bytes=item)
         if not clean:
             await repository.update_batch_status(batch_id, BatchStatus.failed, "No resume passed ingestion and safety checks.")
             return
@@ -64,18 +68,27 @@ async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object
         ranked = await asyncio.to_thread(rank_candidates, rubric_text, clean, settings.stage1_top_n)
         shortlisted: dict[str, str] = {}
         for candidate in ranked:
+            c_name, c_bytes = file_map.get(candidate.candidate_id, (None, None))
             if candidate.promoted and candidate.cosine_similarity_score >= settings.min_similarity_score:
                 shortlisted[candidate.candidate_id] = clean[candidate.candidate_id]
-                await repository.upsert_candidate_evaluation(batch_id, candidate.candidate_id, BatchStatus.scoring, candidate.cosine_similarity_score)
+                await repository.upsert_candidate_evaluation(batch_id, candidate.candidate_id, BatchStatus.scoring, candidate.cosine_similarity_score, filename=c_name, resume_bytes=c_bytes)
             else:
-                await repository.upsert_candidate_evaluation(batch_id, candidate.candidate_id, BatchStatus.pre_filtered, candidate.cosine_similarity_score)
+                await repository.upsert_candidate_evaluation(batch_id, candidate.candidate_id, BatchStatus.pre_filtered, candidate.cosine_similarity_score, filename=c_name, resume_bytes=c_bytes)
+                if parent_batch_id:
+                    await repository.upsert_candidate_evaluation(parent_batch_id, candidate.candidate_id, BatchStatus.pre_filtered, candidate.cosine_similarity_score, filename=c_name, resume_bytes=c_bytes)
         for candidate_id, text in shortlisted.items():
+            c_name, c_bytes = file_map.get(candidate_id, (None, None))
             try:
                 evaluation = await evaluate_candidate(candidate_id, text, rubric_text)
                 score = next(item.cosine_similarity_score for item in ranked if item.candidate_id == candidate_id)
-                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.completed, score, evaluation)
+                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.completed, score, evaluation, filename=c_name, resume_bytes=c_bytes)
+                if parent_batch_id:
+                    await repository.upsert_candidate_evaluation(parent_batch_id, candidate_id, BatchStatus.completed, score, evaluation, filename=c_name, resume_bytes=c_bytes)
+                    await repository.increment_batch_total_files(parent_batch_id)
             except Exception as exc:
-                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.failed, error_log=str(exc))
+                await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.failed, error_log=str(exc), filename=c_name, resume_bytes=c_bytes)
+                if parent_batch_id:
+                    await repository.upsert_candidate_evaluation(parent_batch_id, candidate_id, BatchStatus.failed, error_log=str(exc), filename=c_name, resume_bytes=c_bytes)
         await repository.update_batch_status(batch_id, BatchStatus.completed)
     except Exception:
         await repository.update_batch_status(batch_id, BatchStatus.failed, traceback.format_exc())
