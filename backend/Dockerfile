@@ -14,7 +14,8 @@ RUN pip --default-timeout=900 --retries 10 --no-cache-dir \
     install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu && \
     pip --default-timeout=900 --retries 10 --no-cache-dir \
     install -r requirements.txt && \
-    python -m spacy download en_core_web_sm
+    python -m spacy download en_core_web_sm && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2', model_kwargs={'low_cpu_mem_usage': False})"
 
 COPY . .
 

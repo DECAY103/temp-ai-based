@@ -160,18 +160,25 @@ _INJECTION_EXAMPLES: list[str] = [
 # Lazy-loaded model and precomputed reference embeddings
 _model = None
 _reference_embeddings = None
+_load_attempted = False
 
 
 def _load_model():
     """Lazily load the sentence-transformers model and cache reference embeddings."""
-    global _model, _reference_embeddings
-    if _model is not None:
+    global _model, _reference_embeddings, _load_attempted
+    if _load_attempted:
         return
+    _load_attempted = True
 
     try:
         from sentence_transformers import SentenceTransformer
 
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
+        # Pass low_cpu_mem_usage=False to prevent PyTorch 2.3+ from loading onto meta-tensors
+        try:
+            _model = SentenceTransformer("all-MiniLM-L6-v2", model_kwargs={"low_cpu_mem_usage": False})
+        except Exception:
+            _model = SentenceTransformer("all-MiniLM-L6-v2")
+
         _reference_embeddings = _model.encode(
             _INJECTION_EXAMPLES, convert_to_numpy=True, normalize_embeddings=True
         )

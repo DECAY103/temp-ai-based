@@ -13,15 +13,21 @@ IMPORTANT: sentence-transformers inference is CPU-bound and synchronous.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from functools import lru_cache
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 @lru_cache(maxsize=1)
 def _get_model():
     from sentence_transformers import SentenceTransformer
-    return SentenceTransformer("all-MiniLM-L6-v2")
+    try:
+        return SentenceTransformer("all-MiniLM-L6-v2", model_kwargs={"low_cpu_mem_usage": False})
+    except Exception:
+        return SentenceTransformer("all-MiniLM-L6-v2")
 
 
 @dataclass
@@ -49,20 +55,24 @@ def rank_candidates(
         Top-N have promoted=True; the rest have promoted=False.
 
     IMPORTANT: Run inside asyncio.to_thread().
-
-    TODO (Person 3 — M.7):
-      1. Encode rubric_text with _model.encode([rubric_text]).
-      2. Encode all résumé texts in a single batch for efficiency.
-      3. Compute cosine similarity between rubric embedding and each résumé.
-         (scipy.spatial.distance.cosine or util.cos_sim from sentence_transformers).
-      4. Sort by score descending; set promoted=True for indices < top_n.
-      5. Return the sorted RankedCandidate list.
     """
     if not candidates or not rubric_text.strip() or top_n <= 0:
         return [RankedCandidate(candidate_id, 0.0, False) for candidate_id in candidates]
-    model = _get_model()
-    texts = list(candidates.values())
-    embeddings = model.encode([rubric_text, *texts], convert_to_numpy=True, normalize_embeddings=True)
-    scores = np.dot(embeddings[1:], embeddings[0])
-    ranked = sorted(zip(candidates.keys(), scores), key=lambda item: float(item[1]), reverse=True)
-    return [RankedCandidate(candidate_id, float(score), index < top_n) for index, (candidate_id, score) in enumerate(ranked)]
+
+    try:
+        model = _get_model()
+        texts = list(candidates.values())
+        embeddings = model.encode([rubric_text, *texts], convert_to_numpy=True, normalize_embeddings=True)
+        scores = np.dot(embeddings[1:], embeddings[0])
+        ranked = sorted(zip(candidates.keys(), scores), key=lambda item: float(item[1]), reverse=True)
+        return [RankedCandidate(candidate_id, float(score), index < top_n) for index, (candidate_id, score) in enumerate(ranked)]
+    except Exception as exc:
+        logger.warning("Dense semantic ranker unavailable (%s). Falling back to lexical keyword matching.", exc)
+        rubric_tokens = set(rubric_text.lower().split())
+        scores_fallback = []
+        for cid, txt in candidates.items():
+            txt_tokens = set(txt.lower().split())
+            overlap = len(rubric_tokens & txt_tokens) / max(len(rubric_tokens), 1)
+            scores_fallback.append((cid, round(min(overlap, 1.0), 3)))
+        ranked = sorted(scores_fallback, key=lambda item: float(item[1]), reverse=True)
+        return [RankedCandidate(candidate_id, float(score), index < top_n) for index, (candidate_id, score) in enumerate(ranked)]
