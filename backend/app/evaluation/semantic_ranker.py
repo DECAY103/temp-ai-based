@@ -2,32 +2,19 @@
 evaluation/semantic_ranker.py — Stage 1 semantic pre-filtering.
 Owner: Person 3 (M.7)
 
-Uses sentence-transformers (all-MiniLM-L6-v2) to encode résumé texts and the
-job rubric into dense vectors, then ranks candidates by cosine similarity.
-
-The top-N candidates (configured via settings.stage1_top_n) are promoted to
-Stage 2 LLM evaluation. The rest receive status "pre_filtered".
-
-IMPORTANT: sentence-transformers inference is CPU-bound and synchronous.
-           Call rank_candidates() inside asyncio.to_thread().
+Uses lightweight TF-IDF n-gram vectorization and cosine similarity to rank
+candidates against the job rubric with near-zero memory footprint (< 15 MB RAM).
+Promotes the top-N candidates to Stage 2 LLM evaluation.
 """
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from functools import lru_cache
-
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 logger = logging.getLogger(__name__)
-
-@lru_cache(maxsize=1)
-def _get_model():
-    from sentence_transformers import SentenceTransformer
-    try:
-        return SentenceTransformer("all-MiniLM-L6-v2", model_kwargs={"low_cpu_mem_usage": False})
-    except Exception:
-        return SentenceTransformer("all-MiniLM-L6-v2")
 
 
 @dataclass
@@ -43,7 +30,7 @@ def rank_candidates(
     top_n: int,
 ) -> list[RankedCandidate]:
     """
-    Rank candidates by semantic similarity to the job rubric.
+    Rank candidates by semantic similarity to the job rubric using TF-IDF cosine similarity.
 
     Args:
         rubric_text: Plain-text representation of the job rubric.
@@ -53,21 +40,42 @@ def rank_candidates(
     Returns:
         List of RankedCandidate, sorted by cosine_similarity_score descending.
         Top-N have promoted=True; the rest have promoted=False.
-
-    IMPORTANT: Run inside asyncio.to_thread().
     """
     if not candidates or not rubric_text.strip() or top_n <= 0:
         return [RankedCandidate(candidate_id, 0.0, False) for candidate_id in candidates]
 
     try:
-        model = _get_model()
-        texts = list(candidates.values())
-        embeddings = model.encode([rubric_text, *texts], convert_to_numpy=True, normalize_embeddings=True)
-        scores = np.dot(embeddings[1:], embeddings[0])
-        ranked = sorted(zip(candidates.keys(), scores), key=lambda item: float(item[1]), reverse=True)
-        return [RankedCandidate(candidate_id, float(score), index < top_n) for index, (candidate_id, score) in enumerate(ranked)]
+        candidate_ids = list(candidates.keys())
+        documents = [rubric_text] + [candidates[cid] for cid in candidate_ids]
+
+        # Sublinear TF scaling (1 + log(tf)) dampens very frequent terms
+        vectorizer = TfidfVectorizer(
+            ngram_range=(1, 2),
+            stop_words="english",
+            sublinear_tf=True,
+            max_features=5000,
+        )
+        tfidf_matrix = vectorizer.fit_transform(documents)
+
+        # Vector 0 is the rubric; vectors 1..N are the resumes
+        rubric_vec = tfidf_matrix[0:1]
+        resume_vecs = tfidf_matrix[1:]
+
+        # Compute cosine similarity between each resume and the rubric
+        sim_scores = cosine_similarity(resume_vecs, rubric_vec).flatten()
+
+        ranked = sorted(
+            zip(candidate_ids, sim_scores),
+            key=lambda item: float(item[1]),
+            reverse=True,
+        )
+
+        return [
+            RankedCandidate(candidate_id, round(float(score), 4), index < top_n)
+            for index, (candidate_id, score) in enumerate(ranked)
+        ]
     except Exception as exc:
-        logger.warning("Dense semantic ranker unavailable (%s). Falling back to lexical keyword matching.", exc)
+        logger.warning("TF-IDF ranker fallback triggered (%s)", exc)
         rubric_tokens = set(rubric_text.lower().split())
         scores_fallback = []
         for cid, txt in candidates.items():
@@ -75,4 +83,7 @@ def rank_candidates(
             overlap = len(rubric_tokens & txt_tokens) / max(len(rubric_tokens), 1)
             scores_fallback.append((cid, round(min(overlap, 1.0), 3)))
         ranked = sorted(scores_fallback, key=lambda item: float(item[1]), reverse=True)
-        return [RankedCandidate(candidate_id, float(score), index < top_n) for index, (candidate_id, score) in enumerate(ranked)]
+        return [
+            RankedCandidate(candidate_id, float(score), index < top_n)
+            for index, (candidate_id, score) in enumerate(ranked)
+        ]

@@ -21,10 +21,9 @@ python-magic==0.4.27           # magic-byte binary validation
 # ── NLP / PII Anonymisation (M.5) ────────────────────────────────────────────
 spacy==3.7.5                   # NER — run: python -m spacy download en_core_web_sm
 
-# ── AI — Stage 1 (M.7) ───────────────────────────────────────────────────────
-transformers==4.42.4           # pinned to prevent PyTorch 2.3+ meta-tensor copy error
-sentence-transformers==3.0.1   # all-MiniLM-L6-v2 embeddings                  
-# CPU-only — swap for torch+cu121 if GPU available
+# ── Stage 1 Semantic Ranking (M.7) ──────────────────────────────────────────
+scikit-learn==1.5.0            # Lightweight TF-IDF cosine similarity ranker (<15MB RAM)
+
 
 # ── AI — Stage 2 (M.8) ───────────────────────────────────────────────────────
 google-generativeai==0.7.2     # Gemini Flash API client

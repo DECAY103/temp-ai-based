@@ -21,8 +21,8 @@ import re
 
 import spacy
 
-# load model once // reused across all requests 
-nlp = spacy.load("en_core_web_sm")    
+# Load NER-only model to minimize RAM on 512MB hosting targets
+nlp = spacy.load("en_core_web_sm", disable=["tagger", "parser", "attribute_ruler", "lemmatizer"])
 
 # regex patterns
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
