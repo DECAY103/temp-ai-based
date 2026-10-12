@@ -371,8 +371,9 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
 
     access = _token({"sub": str(user["id"]), "email": user["email"], "role": user["role"]}, settings.jwt_expire_minutes)
     response.set_cookie("access_token", access, httponly=True, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
-    # Non-HttpOnly flag so frontend JS can detect the logged-in state
+    # Non-HttpOnly flags so frontend JS can detect the logged-in state and role
     response.set_cookie("logged_in", "1", httponly=False, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
+    response.set_cookie("user_role", str(user["role"]), httponly=False, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
     return TokenResponse(access_token=access, role=user["role"], last_login_at=previous_login)
 
 
@@ -438,3 +439,32 @@ async def get_activity_logs(user: CurrentUser = Depends(current_user)) -> Activi
         for log in logs
     ]
     return ActivityLogsResponse(logs=entries)
+
+
+# ─── Delete Account ──────────────────────────────────────────────────────────
+
+@router.delete("/account")
+async def delete_account(
+    response: Response,
+    request: Request,
+    user: CurrentUser = Depends(current_user),
+) -> dict:
+    """Permanently delete the authenticated user's account and clear auth cookies."""
+    ip, ua = _client_info(request)
+    success = await repository.delete_user(user.user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User account not found.")
+
+    await repository.log_activity(
+        "account_deleted",
+        user_id=None,
+        email=user.email,
+        detail=f"Self-service account deletion (role: {user.role.value})",
+        ip_address=ip,
+        user_agent=ua,
+    )
+
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("logged_in", path="/")
+    response.delete_cookie("user_role", path="/")
+    return {"message": "Account successfully deleted."}

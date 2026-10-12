@@ -177,8 +177,32 @@ export interface ActivityLogEntry {
   created_at: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  role: "candidate" | "recruiter" | "admin";
+  created_at: string;
+  last_login_at: string | null;
+}
+
+export interface TransferAuditLog {
+  id: string;
+  user_id: string | null;
+  email: string | null;
+  transfer_type: string;
+  filename: string;
+  filesize_bytes: number;
+  item_count: number;
+  status: string;
+  detail: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
 export const authApi = {
-  register: (email: string, password: string, role: "candidate" | "recruiter") =>
+  register: (email: string, password: string, role: "candidate" | "recruiter" | "admin") =>
     request<{ message: string; otpauth_uri: string; otp_mode: string }>("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -221,6 +245,41 @@ export const authApi = {
 
   getActivityLogs: () =>
     request<{ logs: ActivityLogEntry[] }>("/auth/activity-logs"),
+
+  deleteAccount: () =>
+    request<{ message: string }>("/auth/account", {
+      method: "DELETE",
+    }),
+};
+
+// ─── Admin API ───────────────────────────────────────────────────────────────
+
+export const adminApi = {
+  getUsers: (search?: string) =>
+    request<AdminUser[]>(`/admin/users${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+
+  getUserLogs: (userId: string) =>
+    request<ActivityLogEntry[]>(`/admin/users/${userId}/logs`),
+
+  getActivityLogs: () =>
+    request<ActivityLogEntry[]>("/admin/activity-logs"),
+
+  getTransferLogs: () =>
+    request<TransferAuditLog[]>("/admin/transfer-logs"),
+
+  deleteUser: (userId: string) =>
+    request<{ status: string; message: string }>(`/admin/users/${userId}`, {
+      method: "DELETE",
+    }),
+
+  resetDatabase: (confirmation: string) =>
+    request<{ status: string; message: string }>("/admin/reset-db", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmation }),
+    }),
+
+  getUserReportUrl: (userId: string) => `${BASE}/admin/users/${userId}/report-pdf`,
 };
 
 // ─── Candidates API (M.1 / M.3) ──────────────────────────────────────────────

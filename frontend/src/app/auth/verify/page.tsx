@@ -36,6 +36,9 @@ function VerifyForm() {
       const { role: userRole, last_login_at } = await authApi.verify(tempToken, code);
       setRole(userRole);
       setLastLogin(last_login_at);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_role", userRole);
+      }
       setVerified(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -49,7 +52,7 @@ function VerifyForm() {
     const formattedLogin = lastLogin
       ? new Date(lastLogin).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
       : null;
-    const destination = role === "recruiter" ? "/recruiter" : "/candidate";
+    const destination = role === "admin" ? "/admin" : role === "recruiter" ? "/recruiter" : "/candidate";
 
     return (
       <main className="auth-shell">

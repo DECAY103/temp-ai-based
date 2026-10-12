@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authApi } from "@/lib/api";
 import type { PasswordStrength } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -19,10 +19,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [registerMode, setRegisterMode] = useState(false);
-  const [role, setRole] = useState<"candidate" | "recruiter">("recruiter");
+  const [role, setRole] = useState<"candidate" | "recruiter" | "admin">("recruiter");
   const [setupInfo, setSetupInfo] = useState<{ uri: string; mode: string } | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deletedNotice, setDeletedNotice] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("deleted") === "1") {
+        setDeletedNotice(true);
+      }
+    }
+  }, []);
 
   const registerDisabled = registerMode && (!passwordStrength || !passwordStrength.is_acceptable);
 
@@ -76,6 +86,32 @@ export default function LoginPage() {
             ? "Fill in your details to get started."
             : "Sign in to access your dashboard."}
         </p>
+
+        {deletedNotice && (
+          <div
+            style={{
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              color: "#166534",
+              padding: "10px 14px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontSize: "0.85rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span>✓ Your account has been permanently deleted.</span>
+            <button
+              type="button"
+              onClick={() => setDeletedNotice(false)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#166534", fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {setupInfo ? (
           <div className="auth-success-state">
@@ -135,6 +171,7 @@ export default function LoginPage() {
                 <select id="account-role" value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
                   <option value="recruiter">Recruiter</option>
                   <option value="candidate">Candidate</option>
+                  <option value="admin">Administrator</option>
                 </select>
               </div>
             )}

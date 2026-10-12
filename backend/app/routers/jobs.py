@@ -31,6 +31,25 @@ async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = Fil
     batch_id = str(uuid.uuid4())
     await repository.create_batch_job(batch_id, len(names), parsed_rubric, data, file.filename or "resumes.zip")
     background_tasks.add_task(run_batch, batch_id, data, file.filename or "resumes.zip", parsed_rubric)
+
+    # Audit & transfer logging
+    await repository.log_activity(
+        "batch_upload",
+        user_id=user.user_id,
+        email=user.email,
+        detail=f"Uploaded ZIP batch '{file.filename}' with {len(names)} candidates. Rubric: '{parsed_rubric.get('title', 'Untitled')}'. Batch: {batch_id}",
+    )
+    await repository.log_transfer(
+        user_id=user.user_id,
+        email=user.email,
+        transfer_type="batch_upload",
+        filename=file.filename or "resumes.zip",
+        filesize_bytes=len(data),
+        item_count=len(names),
+        status="success",
+        detail=f"Batch ID: {batch_id}",
+    )
+
     return UploadResponse(batch_id=batch_id, status_url=f"/api/jobs/{batch_id}/status")
 
 @router.get("/{batch_id}/status", response_model=BatchStatusResponse)
@@ -60,6 +79,7 @@ async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_r
     row = await repository.get_batch_status(batch_id)
     if not row: raise HTTPException(404, "Batch not found.")
     if row["status"] not in {BatchStatus.completed.value, BatchStatus.failed.value}: raise HTTPException(409, "Batch is still processing.")
+    await repository.log_activity("leaderboard_view", user_id=user.user_id, email=user.email, detail=f"Viewed ranked results for batch {batch_id}")
     return BatchResultsResponse(batch_id=batch_id, results=await repository.get_batch_results(batch_id))
 
 @router.get("/{batch_id}/candidates/{candidate_id}/resume")
@@ -67,6 +87,8 @@ async def download_original_resume(batch_id: str, candidate_id: str, user: Curre
     filename = await repository.get_candidate_filename(batch_id, candidate_id)
     raw_bytes = await repository.get_candidate_resume_bytes(batch_id, candidate_id)
     if raw_bytes and filename:
+        await repository.log_activity("resume_download", user_id=user.user_id, email=user.email, detail=f"Downloaded resume '{filename}' for candidate {candidate_id}")
+        await repository.log_transfer(user_id=user.user_id, email=user.email, transfer_type="resume_download", filename=filename, filesize_bytes=len(raw_bytes), status="success")
         return Response(raw_bytes, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
     context = await repository.get_batch_context(batch_id)
     if not context or not filename: raise HTTPException(404, "Original resume not found.")
@@ -75,4 +97,6 @@ async def download_original_resume(batch_id: str, candidate_id: str, user: Curre
             content = archive.read(filename)
     else:
         content = context["upload_bytes"]
+    await repository.log_activity("resume_download", user_id=user.user_id, email=user.email, detail=f"Downloaded resume '{filename}' from archive for candidate {candidate_id}")
+    await repository.log_transfer(user_id=user.user_id, email=user.email, transfer_type="resume_download", filename=filename, filesize_bytes=len(content or b''), status="success")
     return Response(content, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})

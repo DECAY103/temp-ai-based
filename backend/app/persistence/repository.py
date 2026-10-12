@@ -63,6 +63,14 @@ async def update_password(user_id: str, new_password_hash: str) -> None:
         await conn.execute("UPDATE users SET password_hash=$1 WHERE id=$2::uuid", new_password_hash, user_id)
 
 
+async def delete_user(user_id: str) -> bool:
+    """Permanently delete a user account. Cascades to OTPs/tokens; sets activity logs user_id to NULL."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        res = await conn.execute("DELETE FROM users WHERE id=$1::uuid", user_id)
+        return res.endswith("1")
+
+
 # ─── Email OTP ────────────────────────────────────────────────────────────────
 
 async def create_email_otp(user_id: str, code_hash: str, expires_at) -> None:
@@ -284,3 +292,107 @@ async def list_recent_batches(limit: int = 25) -> list[dict]:
             "upload_filename": r["upload_filename"] or "",
         })
     return results
+
+
+async def log_transfer(
+    *,
+    user_id: str | None = None,
+    email: str | None = None,
+    transfer_type: str,
+    filename: str | None = None,
+    filesize_bytes: int | None = None,
+    item_count: int = 1,
+    status: str = "success",
+    detail: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """INSERT INTO transfer_audit_logs
+               (user_id, email, transfer_type, filename, filesize_bytes, item_count, status, detail, ip_address, user_agent)
+               VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+            user_id, email, transfer_type, filename, filesize_bytes, item_count, status, detail, ip_address, user_agent
+        )
+
+
+async def get_transfer_logs(limit: int = 100) -> list[dict]:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """SELECT id, user_id, email, transfer_type, filename, filesize_bytes, item_count, status, detail, ip_address, user_agent, created_at
+               FROM transfer_audit_logs
+               ORDER BY created_at DESC
+               LIMIT $1""",
+            limit
+        )
+    return [
+        {
+            "id": str(r["id"]),
+            "user_id": str(r["user_id"]) if r["user_id"] else None,
+            "email": r["email"],
+            "transfer_type": r["transfer_type"],
+            "filename": r["filename"],
+            "filesize_bytes": r["filesize_bytes"],
+            "item_count": r["item_count"] or 1,
+            "status": r["status"],
+            "detail": r["detail"],
+            "ip_address": r["ip_address"],
+            "user_agent": r["user_agent"],
+            "created_at": r["created_at"].isoformat() if r["created_at"] else "",
+        }
+        for r in rows
+    ]
+
+
+async def list_all_users(search: str | None = None, limit: int = 100) -> list[dict]:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        if search and search.strip():
+            term = f"%{search.strip().lower()}%"
+            rows = await conn.fetch(
+                """SELECT id, email, role, created_at, last_login_at
+                   FROM users
+                   WHERE LOWER(email) LIKE $1
+                   ORDER BY created_at DESC
+                   LIMIT $2""",
+                term, limit
+            )
+        else:
+            rows = await conn.fetch(
+                """SELECT id, email, role, created_at, last_login_at
+                   FROM users
+                   ORDER BY created_at DESC
+                   LIMIT $1""",
+                limit
+            )
+    return [
+        {
+            "id": str(r["id"]),
+            "email": r["email"],
+            "username": r["email"].split("@")[0] if r["email"] else "unknown",
+            "role": r["role"],
+            "created_at": r["created_at"].isoformat() if r["created_at"] else "",
+            "last_login_at": r["last_login_at"].isoformat() if r["last_login_at"] else None,
+        }
+        for r in rows
+    ]
+
+
+async def reset_database(admin_id: str, admin_email: str) -> None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("DELETE FROM candidate_evaluations")
+            await conn.execute("DELETE FROM batch_jobs")
+            await conn.execute("DELETE FROM transfer_audit_logs")
+            await conn.execute("DELETE FROM activity_logs")
+            await conn.execute("DELETE FROM email_otp_codes")
+            await conn.execute("DELETE FROM password_reset_tokens")
+            await conn.execute("DELETE FROM users WHERE id != $1::uuid", admin_id)
+            await conn.execute(
+                """INSERT INTO activity_logs (user_id, email, action, detail)
+                   VALUES ($1::uuid, $2, 'db_reset_destructive', 'Wipe All Tables & Reset DB executed by administrator')""",
+                admin_id, admin_email
+            )

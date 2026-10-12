@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db, run_migrations, get_pool
 from app.config import settings
 from app.persistence.recovery import recover_orphaned_jobs
-from app.routers import auth, candidates, jobs, processing
+from app.routers import admin, auth, candidates, jobs, processing
 
 
 @asynccontextmanager
@@ -51,6 +51,7 @@ app.add_middleware(
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────
+app.include_router(admin.router,      prefix="/api",            tags=["admin"])
 app.include_router(auth.router,       prefix="/api/auth",       tags=["auth"])
 app.include_router(candidates.router, prefix="/api/candidates", tags=["candidates"])
 app.include_router(jobs.router,       prefix="/api/jobs",       tags=["jobs"])
