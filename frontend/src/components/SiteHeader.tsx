@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation"; // 1. Import usePathname
 import { BackendStatus } from "@/components/BackendStatus";
 
 export function SiteHeader() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const pathname = usePathname(); // 2. Track current route pathname
 
   useEffect(() => {
     // Check for the logged_in cookie to determine login state
@@ -13,7 +15,7 @@ export function SiteHeader() {
       .split("; ")
       .some((c) => c.startsWith("logged_in="));
     setIsLoggedIn(hasToken);
-  }, []);
+  }, [pathname]); // 3. Re-run check whenever the user navigates to a new page
 
   return (
     <header className="site-header">
