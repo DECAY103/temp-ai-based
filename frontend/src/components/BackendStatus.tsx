@@ -101,9 +101,9 @@ export function BackendStatus() {
               <span className="stat-name">Database</span>
               <span className="stat-val">
                 {health?.database === "connected" ? (
-                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 600 }}>Connected ✓</span>
+                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 650 }}>Connected</span>
                 ) : (
-                  <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 600 }}>
+                  <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 650 }}>
                     {health?.database || "Disconnected"}
                   </span>
                 )}
@@ -119,9 +119,9 @@ export function BackendStatus() {
               <span className="stat-name">Email Delivery</span>
               <span className="stat-val">
                 {health?.email_delivery === "gmail_https" ? (
-                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 600 }}>Gmail HTTPS ✓</span>
+                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 650 }}>Gmail HTTPS</span>
                 ) : health?.email_delivery === "smtp" ? (
-                  <span style={{ color: "var(--color-blue, #0D6EFD)", fontWeight: 600 }}>SMTP Legacy ✓</span>
+                  <span style={{ color: "var(--color-blue, #0D6EFD)", fontWeight: 650 }}>SMTP Legacy</span>
                 ) : (
                   <span style={{ color: "var(--color-grey-3, #606060)" }}>Console logs only</span>
                 )}
@@ -137,14 +137,14 @@ export function BackendStatus() {
 
             {statusType === "waking" && (
               <p className="backend-status-hint">
-                💡 <strong>Render Free Tier Notice:</strong> Web services spin down after 15 min of
+                <strong>Infrastructure Notice:</strong> Web services spin down after 15 min of
                 inactivity. Waking up from cold sleep takes 40–60 seconds. Please wait a moment.
               </p>
             )}
 
             {statusType === "error" && (
               <p className="backend-status-hint error">
-                ⚠️ Make sure <code>NEXT_PUBLIC_API_URL</code> on Vercel points to your Render backend
+                <strong>Configuration Alert:</strong> Ensure <code>NEXT_PUBLIC_API_URL</code> on Vercel points to your Render backend
                 and that you clicked <strong>Redeploy</strong> on Vercel after setting it.
               </p>
             )}

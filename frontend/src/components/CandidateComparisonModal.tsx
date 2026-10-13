@@ -14,7 +14,6 @@ export function CandidateComparisonModal({
   batchId,
   onClose,
 }: CandidateComparisonModalProps) {
-  // Determine highest scores for badge highlights
   const highestOverall = useMemo(
     () => Math.max(...candidates.map((c) => c.overall_score)),
     [candidates]
@@ -33,12 +32,10 @@ export function CandidateComparisonModal({
     if (candidates.length < 2) return null;
     const allMatching = candidates.map((c) => new Set(c.matching_skills));
 
-    // Intersection: skills present in all candidates
     const sharedSkills = candidates[0].matching_skills.filter((skill) =>
       allMatching.every((set) => set.has(skill))
     );
 
-    // Unique skills for each candidate
     const uniqueSkills = candidates.map((c, idx) => {
       const otherSets = allMatching.filter((_, i) => i !== idx);
       return c.matching_skills.filter((skill) =>
@@ -49,12 +46,12 @@ export function CandidateComparisonModal({
     return { sharedSkills, uniqueSkills };
   }, [candidates]);
 
-  // AI Trade-off synthesis between Candidate 1 and Candidate 2
+  // Comparative Trade-off Analysis
   const tradeOffSummary = useMemo(() => {
     if (candidates.length < 2) return null;
     const [c1, c2] = candidates;
-    const name1 = c1.filename || `Candidate A (${c1.candidate_id.slice(0, 6)})`;
-    const name2 = c2.filename || `Candidate B (${c2.candidate_id.slice(0, 6)})`;
+    const name1 = c1.filename || `Candidate 1 (${c1.candidate_id.slice(0, 6)})`;
+    const name2 = c2.filename || `Candidate 2 (${c2.candidate_id.slice(0, 6)})`;
 
     const skillDiff = c1.skill_match_score - c2.skill_match_score;
     const expDiff = c1.work_experience_score - c2.work_experience_score;
@@ -65,35 +62,34 @@ export function CandidateComparisonModal({
     if (Math.abs(overallDiff) >= 1) {
       const leader = overallDiff > 0 ? name1 : name2;
       const margin = Math.abs(overallDiff).toFixed(1);
-      points.push(`Overall Leader: ${leader} leads by ${margin} points.`);
+      points.push(`Overall Rating: ${leader} holds a ${margin} point lead in composite evaluation.`);
     } else {
-      points.push("Overall: Both candidates hold an exceptionally close composite score (under 1 point difference).");
+      points.push("Overall Rating: Both candidates possess equivalent composite ratings (within 1.0 point margin).");
     }
 
     if (Math.abs(skillDiff) >= 2) {
       const skillLeader = skillDiff > 0 ? name1 : name2;
       const diffVal = Math.abs(skillDiff).toFixed(1);
-      points.push(`Technical Skills: ${skillLeader} demonstrates a +${diffVal} advantage in rubric skill matching.`);
+      points.push(`Technical Alignment: ${skillLeader} leads by +${diffVal}% on verified rubric skills.`);
     }
 
     if (Math.abs(expDiff) >= 2) {
       const expLeader = expDiff > 0 ? name1 : name2;
       const diffVal = Math.abs(expDiff).toFixed(1);
-      points.push(`Industry Experience: ${expLeader} holds a +${diffVal} lead in verified career tenure.`);
+      points.push(`Experience Depth: ${expLeader} leads by +${diffVal}% in career tenure and seniority.`);
     }
 
-    // Recommendation conclusion
     let recommendation = "";
     if (skillDiff > 5 && expDiff < -5) {
-      recommendation = `Trade-off: ${name1} is the stronger hands-on specialist for technical depth, while ${name2} brings seasoned domain tenure and leadership.`;
+      recommendation = `Trade-Off Summary: ${name1} delivers higher hands-on keyword match for immediate execution, whereas ${name2} brings senior career tenure and domain longevity.`;
     } else if (skillDiff < -5 && expDiff > 5) {
-      recommendation = `Trade-off: ${name2} brings deeper immediate rubric skills, whereas ${name1} provides broader career background.`;
+      recommendation = `Trade-Off Summary: ${name2} satisfies more specific criteria keywords, while ${name1} offers wider seniority and background versatility.`;
     } else if (overallDiff > 5) {
-      recommendation = `Recommendation: ${name1} demonstrates superior alignment across both technical skill match and experience.`;
+      recommendation = `Recommendation: ${name1} demonstrates superior overall alignment across both core skill requirements and career track record.`;
     } else if (overallDiff < -5) {
-      recommendation = `Recommendation: ${name2} demonstrates superior alignment across both technical skill match and experience.`;
+      recommendation = `Recommendation: ${name2} demonstrates superior overall alignment across both core skill requirements and career track record.`;
     } else {
-      recommendation = "Recommendation: Balanced match. Evaluate unique skill strengths below and schedule team interviews to assess cultural fit.";
+      recommendation = "Recommendation: Closely matched candidate profiles. Evaluate specific distinct advantages and project depth during structured technical interviews.";
     }
 
     return { points, recommendation };
@@ -105,13 +101,13 @@ export function CandidateComparisonModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(21, 2, 2, 0.55)",
+        background: "rgba(21, 2, 2, 0.70)",
         backdropFilter: "blur(4px)",
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "16px",
+        padding: "24px",
       }}
       onClick={onClose}
       role="dialog"
@@ -122,12 +118,12 @@ export function CandidateComparisonModal({
         className="comparison-card"
         style={{
           background: "var(--surface, #FFFFFF)",
-          border: "1px solid var(--color-linen, #EBEAEA)",
-          borderRadius: "16px",
-          width: "min(100%, 960px)",
+          border: "1px solid var(--color-grey-1, #C6C6C6)",
+          borderRadius: "14px",
+          width: "min(100%, 1060px)",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: "28px 32px",
+          padding: "36px 40px",
           boxShadow: "var(--shadow-lg)",
           color: "var(--ink, #150202)",
         }}
@@ -139,63 +135,71 @@ export function CandidateComparisonModal({
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: "16px",
+            gap: "24px",
             borderBottom: "1px solid var(--color-linen, #EBEAEA)",
-            paddingBottom: "18px",
-            marginBottom: "24px",
+            paddingBottom: "20px",
+            marginBottom: "30px",
           }}
         >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "1.2rem" }}>⚔️</span>
-              <h2
-                id="comparison-modal-title"
-                style={{
-                  margin: 0,
-                  fontSize: "1.35rem",
-                  fontWeight: 750,
-                  color: "var(--ink, #150202)",
-                }}
-              >
-                Candidate Head-to-Head Comparison
-              </h2>
-            </div>
-            <p
+            <h2
+              id="comparison-modal-title"
               style={{
-                margin: "4px 0 0",
-                fontSize: "0.86rem",
-                color: "var(--muted, #606060)",
+                margin: "0 0 6px",
+                fontSize: "1.55rem",
+                fontWeight: 700,
+                color: "var(--ink, #150202)",
+                letterSpacing: "-0.02em",
               }}
             >
-              Side-by-side analysis of {candidates.length} candidates across rubric criteria, skill overlap, and trade-offs.
+              Candidate Head-to-Head Comparison
+            </h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.95rem",
+                color: "var(--muted, #606060)",
+                lineHeight: 1.5,
+              }}
+            >
+              Side-by-side comparative benchmarking for {candidates.length} candidates across composite scores, core pillars, and skill differentials.
             </p>
           </div>
+
           <button
             type="button"
-            className="modal-close"
+            className="secondary-button"
             onClick={onClose}
-            aria-label="Close comparison dialog"
+            aria-label="Close comparison modal"
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
               background: "var(--surface-soft, #FAFAFA)",
               border: "1px solid var(--color-grey-1, #C6C6C6)",
               borderRadius: "8px",
-              padding: "6px 12px",
+              padding: "9px 16px",
               cursor: "pointer",
-              fontWeight: 700,
+              fontWeight: 650,
+              fontSize: "0.9rem",
               color: "var(--ink, #150202)",
             }}
           >
-            ✕ Close
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <span>Close</span>
           </button>
         </div>
 
-        {/* Candidate Headers Grid */}
+        {/* Candidate Profile Cards Grid */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-            gap: "16px",
-            marginBottom: "24px",
+            gap: "20px",
+            marginBottom: "32px",
           }}
         >
           {candidates.map((c, i) => {
@@ -204,132 +208,145 @@ export function CandidateComparisonModal({
               <div
                 key={c.candidate_id}
                 style={{
-                  background: isLeader
-                    ? "var(--accent-soft, #EEEBFA)"
-                    : "var(--surface-soft, #FAFAFA)",
-                  border: isLeader
-                    ? "1.5px solid var(--primary-1, #4729A3)"
-                    : "1px solid var(--color-linen, #EBEAEA)",
+                  background: isLeader ? "var(--accent-soft, #EEEBFA)" : "var(--surface-soft, #FAFAFA)",
+                  border: isLeader ? "1.5px solid var(--primary-1, #4729A3)" : "1px solid var(--color-grey-1, #C6C6C6)",
                   borderRadius: "12px",
-                  padding: "16px 18px",
+                  padding: "22px 24px",
                   position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
                 }}
               >
                 {isLeader && (
                   <span
                     style={{
                       position: "absolute",
-                      top: "-10px",
-                      right: "12px",
+                      top: "-12px",
+                      right: "16px",
                       background: "var(--primary-1, #4729A3)",
                       color: "#FFFFFF",
-                      fontSize: "0.68rem",
-                      fontWeight: 750,
-                      padding: "2px 8px",
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      padding: "3px 12px",
                       borderRadius: "99px",
+                      letterSpacing: "0.03em",
                       textTransform: "uppercase",
-                      letterSpacing: "0.05em",
                     }}
                   >
-                    ★ Top Scorer
+                    Top Score
                   </span>
                 )}
-                <div style={{ fontSize: "0.78rem", color: "var(--muted, #606060)", fontWeight: 600 }}>
-                  Candidate #{i + 1}
-                </div>
-                <h3
-                  style={{
-                    margin: "4px 0 8px",
-                    fontSize: "1.02rem",
-                    fontWeight: 700,
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {c.filename || `ID: ${c.candidate_id.slice(0, 8)}…`}
-                </h3>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "12px" }}>
-                  <span
+
+                <div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Candidate {i + 1}
+                  </div>
+                  <h3
                     style={{
-                      fontSize: "1.6rem",
-                      fontWeight: 800,
-                      color: "var(--primary-1, #4729A3)",
+                      margin: "6px 0 12px",
+                      fontSize: "1.15rem",
+                      fontWeight: 700,
+                      color: "var(--ink, #150202)",
+                      wordBreak: "break-all",
                     }}
                   >
-                    {c.overall_score.toFixed(1)}
-                  </span>
-                  <span style={{ fontSize: "0.8rem", color: "var(--muted, #606060)" }}>/ 100 overall</span>
+                    {c.filename || `ID: ${c.candidate_id.slice(0, 8)}`}
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "16px" }}>
+                    <span
+                      style={{
+                        fontSize: "2.1rem",
+                        fontWeight: 800,
+                        color: "var(--primary-1, #4729A3)",
+                        fontVariantNumeric: "tabular-nums",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {c.overall_score.toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: "0.92rem", color: "var(--muted, #606060)", fontWeight: 500 }}>
+                      / 100 overall
+                    </span>
+                  </div>
                 </div>
+
                 <a
                   href={`/api/jobs/${batchId}/candidates/${c.candidate_id}/resume`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ghost"
                   style={{
-                    display: "inline-block",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
                     width: "100%",
-                    textAlign: "center",
-                    fontSize: "0.78rem",
-                    padding: "6px 10px",
-                    borderRadius: "6px",
+                    fontSize: "0.88rem",
+                    padding: "9px 14px",
+                    borderRadius: "8px",
                     background: "var(--surface, #FFFFFF)",
                     border: "1px solid var(--color-grey-1, #C6C6C6)",
                     color: "var(--ink, #150202)",
                     textDecoration: "none",
-                    fontWeight: 600,
+                    fontWeight: 650,
                   }}
                 >
-                  📄 Inspect Resume PDF
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  <span>Inspect Original Resume</span>
                 </a>
               </div>
             );
           })}
         </div>
 
-        {/* Metric Comparison Gauges */}
+        {/* Pillar Benchmark Section */}
         <div
           style={{
             background: "var(--surface-soft, #FAFAFA)",
             border: "1px solid var(--color-linen, #EBEAEA)",
             borderRadius: "12px",
-            padding: "20px 22px",
-            marginBottom: "24px",
+            padding: "24px 28px",
+            marginBottom: "32px",
           }}
         >
           <h4
             style={{
-              margin: "0 0 16px",
-              fontSize: "0.94rem",
+              margin: "0 0 20px",
+              fontSize: "1.05rem",
               fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--muted, #606060)",
+              color: "var(--ink, #150202)",
             }}
           >
             Pillar-by-Pillar Benchmark
           </h4>
 
-          {/* Metric 1: Skill Match */}
-          <div style={{ marginBottom: "18px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>Skill Match Score</span>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>Rubric Keyword & Capability Alignment</span>
+          {/* Skill Match */}
+          <div style={{ marginBottom: "22px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Skill Match</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Rubric Keyword Alignment</span>
             </div>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "16px",
+                gap: "20px",
               }}
             >
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: "4px" }}>
-                    <span>Candidate #{i + 1}</span>
-                    <strong style={{ color: c.skill_match_score === highestSkill ? "var(--color-liberty-green, #198754)" : "inherit" }}>
-                      {c.skill_match_score.toFixed(1)}% {c.skill_match_score === highestSkill && "✓"}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
+                    <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.skill_match_score === highestSkill ? "var(--color-liberty-green, #198754)" : "inherit" }}>
+                      {c.skill_match_score.toFixed(1)}% {c.skill_match_score === highestSkill && "(Leader)"}
                     </strong>
                   </div>
-                  <div style={{ height: "8px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
                     <div
                       style={{
                         width: `${Math.min(100, Math.max(0, c.skill_match_score))}%`,
@@ -344,28 +361,28 @@ export function CandidateComparisonModal({
             </div>
           </div>
 
-          {/* Metric 2: Work Experience */}
-          <div style={{ marginBottom: "18px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>Work Experience Score</span>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>Career Tenure & Seniority Fit</span>
+          {/* Work Experience */}
+          <div style={{ marginBottom: "22px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Work Experience</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Tenure & Seniority Match</span>
             </div>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "16px",
+                gap: "20px",
               }}
             >
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: "4px" }}>
-                    <span>Candidate #{i + 1}</span>
-                    <strong style={{ color: c.work_experience_score === highestExp ? "var(--color-liberty-green, #198754)" : "inherit" }}>
-                      {c.work_experience_score.toFixed(1)}% {c.work_experience_score === highestExp && "✓"}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
+                    <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.work_experience_score === highestExp ? "var(--color-liberty-green, #198754)" : "inherit" }}>
+                      {c.work_experience_score.toFixed(1)}% {c.work_experience_score === highestExp && "(Leader)"}
                     </strong>
                   </div>
-                  <div style={{ height: "8px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
                     <div
                       style={{
                         width: `${Math.min(100, Math.max(0, c.work_experience_score))}%`,
@@ -380,28 +397,30 @@ export function CandidateComparisonModal({
             </div>
           </div>
 
-          {/* Metric 3: Semantic Cosine Relevancy */}
+          {/* Semantic Cosine Relevance */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>Semantic Text Relevance</span>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>Stage-1 Vector Cosine Similarity</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Semantic Vector Relevance</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Stage-1 Vector Cosine Similarity</span>
             </div>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "16px",
+                gap: "20px",
               }}
             >
               {candidates.map((c, i) => {
-                const simPct = (c.cosine_similarity_score * 100);
+                const simPct = c.cosine_similarity_score * 100;
                 return (
                   <div key={c.candidate_id}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: "4px" }}>
-                      <span>Candidate #{i + 1}</span>
-                      <strong>{c.cosine_similarity_score.toFixed(3)} ({simPct.toFixed(1)}%)</strong>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
+                      <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                      <strong style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {c.cosine_similarity_score.toFixed(3)} ({simPct.toFixed(1)}%)
+                      </strong>
                     </div>
-                    <div style={{ height: "8px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                    <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
                       <div
                         style={{
                           width: `${Math.min(100, Math.max(0, simPct))}%`,
@@ -418,26 +437,30 @@ export function CandidateComparisonModal({
           </div>
         </div>
 
-        {/* AI Trade-off & Decision Synthesis Card */}
+        {/* Comparative Trade-off Analysis */}
         {tradeOffSummary && (
           <div
             style={{
               background: "var(--surface, #FFFFFF)",
               border: "1px solid var(--accent-border, #BDADEB)",
               borderRadius: "12px",
-              padding: "18px 20px",
-              marginBottom: "24px",
+              padding: "24px 28px",
+              marginBottom: "32px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-              <span style={{ fontSize: "1.1rem" }}>💡</span>
-              <h4 style={{ margin: 0, fontSize: "0.96rem", fontWeight: 750, color: "var(--primary-1, #4729A3)" }}>
-                AI Decision Synthesis & Trade-Off Analysis
-              </h4>
-            </div>
-            <ul style={{ margin: "0 0 12px", paddingLeft: "20px", fontSize: "0.85rem", lineHeight: 1.55 }}>
+            <h4
+              style={{
+                margin: "0 0 14px",
+                fontSize: "1.05rem",
+                fontWeight: 700,
+                color: "var(--primary-1, #4729A3)",
+              }}
+            >
+              Comparative Evaluation Synthesis
+            </h4>
+            <ul style={{ margin: "0 0 16px", paddingLeft: "22px", fontSize: "0.94rem", lineHeight: 1.65, color: "var(--ink, #150202)" }}>
               {tradeOffSummary.points.map((pt, idx) => (
-                <li key={idx} style={{ marginBottom: "4px" }}>
+                <li key={idx} style={{ marginBottom: "6px" }}>
                   {pt}
                 </li>
               ))}
@@ -445,11 +468,12 @@ export function CandidateComparisonModal({
             <div
               style={{
                 background: "var(--accent-soft, #EEEBFA)",
-                borderLeft: "3px solid var(--primary-1, #4729A3)",
-                padding: "10px 14px",
+                borderLeft: "4px solid var(--primary-1, #4729A3)",
+                padding: "14px 18px",
                 borderRadius: "6px",
-                fontSize: "0.85rem",
+                fontSize: "0.93rem",
                 fontWeight: 600,
+                lineHeight: 1.55,
                 color: "var(--ink, #150202)",
               }}
             >
@@ -458,28 +482,34 @@ export function CandidateComparisonModal({
           </div>
         )}
 
-        {/* Skill Overlap Matrix */}
-        <div style={{ marginBottom: "20px" }}>
+        {/* Skill Overlap & Differential Matrix */}
+        <div style={{ marginBottom: "32px" }}>
           <h4
             style={{
-              margin: "0 0 14px",
-              fontSize: "0.94rem",
+              margin: "0 0 18px",
+              fontSize: "1.05rem",
               fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--muted, #606060)",
+              color: "var(--ink, #150202)",
             }}
           >
-            Skill Overlap & Differential Analysis
+            Skill Overlap & Differential Matrix
           </h4>
 
-          {/* Shared Skills */}
+          {/* Shared Competencies */}
           {skillAnalysis && skillAnalysis.sharedSkills.length > 0 && (
-            <div style={{ marginBottom: "16px", padding: "12px 14px", background: "var(--good-soft, #E8F5E9)", borderRadius: "8px", border: "1px solid var(--color-liberty-green, #198754)" }}>
-              <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--color-liberty-green, #198754)", marginBottom: "8px" }}>
-                ✓ Shared Competencies (Present in All Compared Candidates):
+            <div
+              style={{
+                marginBottom: "20px",
+                padding: "16px 20px",
+                background: "var(--good-soft, #E8F5E9)",
+                borderRadius: "10px",
+                border: "1px solid var(--color-liberty-green, #198754)",
+              }}
+            >
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--color-liberty-green, #198754)", marginBottom: "10px" }}>
+                Common Competencies (Verified across all selected profiles):
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {skillAnalysis.sharedSkills.map((skill, sIdx) => (
                   <span
                     key={sIdx}
@@ -487,26 +517,25 @@ export function CandidateComparisonModal({
                       background: "var(--surface, #FFFFFF)",
                       color: "var(--color-liberty-green, #198754)",
                       border: "1px solid var(--color-liberty-green, #198754)",
-                      fontSize: "0.76rem",
-                      fontWeight: 600,
-                      padding: "2px 8px",
+                      fontSize: "0.85rem",
+                      fontWeight: 650,
+                      padding: "4px 12px",
                       borderRadius: "6px",
                     }}
                   >
-                    ✓ {skill}
+                    {skill}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Unique Skills per Candidate */}
+          {/* Unique & Missing Skills per Candidate */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-              gap: "16px",
-              marginBottom: "16px",
+              gap: "20px",
             }}
           >
             {candidates.map((c, i) => {
@@ -517,17 +546,19 @@ export function CandidateComparisonModal({
                   style={{
                     background: "var(--surface-soft, #FAFAFA)",
                     border: "1px solid var(--color-linen, #EBEAEA)",
-                    borderRadius: "8px",
-                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    padding: "18px 20px",
                   }}
                 >
-                  <div style={{ fontSize: "0.8rem", fontWeight: 700, marginBottom: "8px", color: "var(--primary-1, #4729A3)" }}>
-                    ★ Unique to Candidate #{i + 1}:
+                  <div style={{ fontSize: "0.92rem", fontWeight: 700, marginBottom: "10px", color: "var(--primary-1, #4729A3)" }}>
+                    Distinct Advantages (Candidate {i + 1}):
                   </div>
                   {uniqueList.length === 0 ? (
-                    <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>No unique skills (all overlap with competitors).</span>
+                    <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>
+                      No unique skills (all overlap with compared profiles).
+                    </span>
                   ) : (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                       {uniqueList.map((skill, sIdx) => (
                         <span
                           key={sIdx}
@@ -535,39 +566,43 @@ export function CandidateComparisonModal({
                             background: "var(--accent-soft, #EEEBFA)",
                             color: "var(--primary-1, #4729A3)",
                             border: "1px solid var(--accent-border, #BDADEB)",
-                            fontSize: "0.74rem",
-                            fontWeight: 600,
-                            padding: "2px 8px",
+                            fontSize: "0.84rem",
+                            fontWeight: 650,
+                            padding: "4px 12px",
                             borderRadius: "6px",
                           }}
                         >
-                          +{skill}
+                          {skill}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  {/* Missing Skills */}
-                  <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700, marginBottom: "6px", color: "var(--color-coral-red, #DC3545)" }}>
+                  {/* Missing Rubric Skills */}
+                  <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
+                    <div style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "10px", color: "var(--color-coral-red, #DC3545)" }}>
                       Missing Rubric Requirements:
                     </div>
                     {c.missing_skills.length === 0 ? (
-                      <span style={{ fontSize: "0.76rem", color: "var(--color-liberty-green, #198754)", fontWeight: 600 }}>Zero gaps! All required skills matched.</span>
+                      <span style={{ fontSize: "0.86rem", color: "var(--color-liberty-green, #198754)", fontWeight: 650 }}>
+                        All mandatory requirements satisfied.
+                      </span>
                     ) : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                         {c.missing_skills.map((skill, sIdx) => (
                           <span
                             key={sIdx}
                             style={{
                               background: "var(--bad-soft, #FDE8E8)",
                               color: "var(--color-coral-red, #DC3545)",
-                              fontSize: "0.72rem",
-                              padding: "1px 6px",
-                              borderRadius: "4px",
+                              border: "1px solid var(--color-coral-red, #DC3545)",
+                              fontSize: "0.82rem",
+                              fontWeight: 650,
+                              padding: "4px 10px",
+                              borderRadius: "6px",
                             }}
                           >
-                            ✕ {skill}
+                            {skill}
                           </span>
                         ))}
                       </div>
@@ -579,25 +614,23 @@ export function CandidateComparisonModal({
           </div>
         </div>
 
-        {/* Verdict Summaries */}
-        <div style={{ marginBottom: "20px" }}>
+        {/* Evaluator Verdict Summaries */}
+        <div style={{ marginBottom: "32px" }}>
           <h4
             style={{
-              margin: "0 0 12px",
-              fontSize: "0.94rem",
+              margin: "0 0 16px",
+              fontSize: "1.05rem",
               fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--muted, #606060)",
+              color: "var(--ink, #150202)",
             }}
           >
-            Detailed Evaluator Verdicts
+            Evaluator Verdict Summaries
           </h4>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-              gap: "16px",
+              gap: "20px",
             }}
           >
             {candidates.map((c, i) => (
@@ -606,29 +639,29 @@ export function CandidateComparisonModal({
                 style={{
                   background: "var(--surface-soft, #FAFAFA)",
                   border: "1px solid var(--color-linen, #EBEAEA)",
-                  borderRadius: "8px",
-                  padding: "12px 14px",
-                  fontSize: "0.82rem",
-                  lineHeight: 1.55,
+                  borderRadius: "10px",
+                  padding: "18px 20px",
+                  fontSize: "0.92rem",
+                  lineHeight: 1.65,
                   color: "var(--ink, #150202)",
                 }}
               >
-                <div style={{ fontWeight: 700, marginBottom: "6px", color: "var(--muted, #606060)" }}>
-                  Candidate #{i + 1} Assessment:
+                <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--muted, #606060)", fontSize: "0.86rem" }}>
+                  Candidate {i + 1} Assessment:
                 </div>
-                <p style={{ margin: 0 }}>{c.verdict_summary || "No detailed verdict available."}</p>
+                <p style={{ margin: 0 }}>{c.verdict_summary || "No specific verdict recorded."}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "14px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "20px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
           <button
             type="button"
             className="primary"
             onClick={onClose}
-            style={{ fontSize: "0.88rem", padding: "8px 20px" }}
+            style={{ fontSize: "0.95rem", padding: "11px 26px", borderRadius: "8px" }}
           >
             Done Comparing
           </button>

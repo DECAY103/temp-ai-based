@@ -199,13 +199,22 @@ export default function AdminPage() {
             alignItems: "center",
           }}
         >
-          <span>✓ {resetSuccessMessage}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>{resetSuccessMessage}</span>
+          </span>
           <button
             type="button"
             onClick={() => setResetSuccessMessage(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", fontWeight: 700 }}
+            aria-label="Dismiss message"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", display: "flex", alignItems: "center" }}
           >
-            ✕
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       )}
@@ -292,7 +301,12 @@ export default function AdminPage() {
           <>
             <div className="admin-card-toolbar">
               <div className="admin-search-wrap">
-                <span className="admin-search-icon">🔍</span>
+                <span className="admin-search-icon" style={{ display: "flex", alignItems: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
                 <input
                   type="text"
                   className="admin-search-input"
@@ -403,7 +417,12 @@ export default function AdminPage() {
           <>
             <div className="admin-card-toolbar">
               <div className="admin-search-wrap">
-                <span className="admin-search-icon">🔍</span>
+                <span className="admin-search-icon" style={{ display: "flex", alignItems: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
                 <input
                   type="text"
                   className="admin-search-input"
@@ -481,7 +500,12 @@ export default function AdminPage() {
           <>
             <div className="admin-card-toolbar">
               <div className="admin-search-wrap">
-                <span className="admin-search-icon">🔍</span>
+                <span className="admin-search-icon" style={{ display: "flex", alignItems: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
                 <input
                   type="text"
                   className="admin-search-input"
@@ -583,8 +607,13 @@ export default function AdminPage() {
                 type="button"
                 className="admin-modal-close"
                 onClick={() => setInspectedUser(null)}
+                aria-label="Close logs dialog"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
 
@@ -658,17 +687,26 @@ export default function AdminPage() {
         <div className="admin-modal-backdrop" onClick={() => !resetting && setShowResetModal(false)}>
           <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header" style={{ borderBottomColor: "#fee2e2" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 style={{ color: "#b91c1c" }}>Wipe All Tables & Reset DB</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <h2 style={{ color: "#b91c1c", margin: 0 }}>Wipe All Tables & Reset DB</h2>
               </div>
               <button
                 type="button"
                 className="admin-modal-close"
                 disabled={resetting}
                 onClick={() => setShowResetModal(false)}
+                aria-label="Close reset dialog"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
 
@@ -755,17 +793,26 @@ export default function AdminPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 style={{ color: "var(--color-coral-red, #DC3545)" }}>Delete User Account</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #DC3545)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <h2 style={{ color: "var(--color-coral-red, #DC3545)", margin: 0 }}>Delete User Account</h2>
               </div>
               <button
                 type="button"
                 className="admin-modal-close"
                 disabled={deletingUser}
                 onClick={() => setUserToDelete(null)}
+                aria-label="Close delete user dialog"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
 

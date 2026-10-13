@@ -36,16 +36,16 @@ function OutputCard({ result }: { result: ProcessingResult }) {
 
           <div className="checks">
             <span className={file.validation_passed ? "pass" : "fail"}>
-              {file.validation_passed ? "✓" : "×"} File validation
+              {file.validation_passed ? "Passed:" : "Failed:"} File validation
             </span>
             <span className={file.extracted_text ? "pass" : "muted"}>
-              {file.extracted_text ? "✓" : "–"} Text extraction
+              {file.extracted_text ? "Completed:" : "Pending:"} Text extraction
             </span>
             <span className={file.anonymised_text ? "pass" : "muted"}>
-              {file.anonymised_text ? "✓" : "–"} PII anonymisation
+              {file.anonymised_text ? "Completed:" : "Pending:"} PII anonymisation
             </span>
             <span className={file.safety_passed === true ? "pass" : file.safety_passed === false ? "fail" : "muted"}>
-              {file.safety_passed === true ? "✓" : file.safety_passed === false ? "×" : "–"} Safety scan
+              {file.safety_passed === true ? "Passed:" : file.safety_passed === false ? "Failed:" : "Pending:"} Safety scan
             </span>
           </div>
 

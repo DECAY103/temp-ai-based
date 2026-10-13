@@ -103,7 +103,7 @@ export function UploadForm({ role, onSuccess, initialJobId = "" }: UploadFormPro
           <label className="field-label" htmlFor="job-id-input">Recruiter batch ID</label>
           <input id="job-id-input" type="text" placeholder="Paste the recruiter’s batch ID" value={jobId} onChange={(e) => setJobId(e.target.value)} required />
           <p className="field-help">
-            {initialJobId ? "✓ Pre-filled from job application link." : "Ask the recruiter for the batch ID created with the job rubric."}
+            {initialJobId ? "Pre-filled from job application link." : "Ask the recruiter for the batch ID created with the job rubric."}
           </p>
         </div>
       )}

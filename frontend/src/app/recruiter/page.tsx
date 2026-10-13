@@ -137,42 +137,46 @@ export default function RecruiterPage() {
                 }}
               >
                 <div style={{ minWidth: "220px", flex: "1 1 300px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                    <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>{job.title || "Job Rubric Batch"}</h3>
-                    <span className="status-chip" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>{job.status}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>{job.title || "Job Rubric Batch"}</h3>
+                    <span className="status-chip" style={{ fontSize: "0.78rem", padding: "3px 10px" }}>{job.status}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", fontSize: "0.82rem", color: "var(--muted, #606060)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", fontSize: "0.88rem", color: "var(--muted, #606060)" }}>
                     <span>{job.candidate_count > 0 ? `${job.candidate_count} candidates evaluated` : `${job.total_files} file(s)`}</span>
                     {job.created_at && <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>}
-                    <span>ID: <code style={{ fontSize: "0.78rem" }}>{job.batch_id.slice(0, 8)}…</code></span>
+                    <span>ID: <code style={{ fontSize: "0.84rem" }}>{job.batch_id.slice(0, 8)}…</code></span>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <button
                     type="button"
                     className="ghost"
-                    style={{ fontSize: "0.78rem", padding: "6px 12px" }}
+                    style={{ fontSize: "0.86rem", padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--color-grey-1, #C6C6C6)", fontWeight: 600, cursor: "pointer" }}
                     onClick={() => copyBatchId(job.batch_id)}
                     title="Copy raw Batch ID"
                   >
-                    {copiedId === job.batch_id ? "Copied ID! ✓" : "Copy Batch ID"}
+                    {copiedId === job.batch_id ? "Copied" : "Copy Batch ID"}
                   </button>
                   <button
                     type="button"
                     className="ghost"
-                    style={{ fontSize: "0.78rem", padding: "6px 12px" }}
+                    style={{ fontSize: "0.86rem", padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--color-grey-1, #C6C6C6)", fontWeight: 600, cursor: "pointer" }}
                     onClick={() => copyCandidateLink(job.batch_id)}
                     title="Copy direct application link with pre-filled batch ID for candidates"
                   >
-                    {copiedLink === job.batch_id ? "Link Copied! ✓" : "Copy Candidate Link"}
+                    {copiedLink === job.batch_id ? "Link Copied" : "Copy Candidate Link"}
                   </button>
                   <Link
                     href={`/recruiter/leaderboard?batch_id=${job.batch_id}`}
                     className="primary"
-                    style={{ fontSize: "0.82rem", padding: "7px 14px", textDecoration: "none", borderRadius: "8px" }}
+                    style={{ fontSize: "0.88rem", padding: "8px 18px", textDecoration: "none", borderRadius: "8px", fontWeight: 650, display: "inline-flex", alignItems: "center", gap: "6px" }}
                   >
-                    View Leaderboard →
+                    <span>View Leaderboard</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
                   </Link>
                 </div>
               </div>

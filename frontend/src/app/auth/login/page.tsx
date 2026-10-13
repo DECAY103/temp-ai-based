@@ -103,20 +103,33 @@ export default function LoginPage() {
               alignItems: "center",
             }}
           >
-            <span>✓ Your account has been permanently deleted.</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Your account has been permanently deleted.</span>
+            </span>
             <button
               type="button"
               onClick={() => setDeletedNotice(false)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", fontWeight: 700 }}
+              aria-label="Dismiss notice"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", display: "flex", alignItems: "center" }}
             >
-              ✕
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
         )}
 
         {setupInfo ? (
           <div className="auth-success-state">
-            <div className="auth-success-icon">✓</div>
+            <div className="auth-success-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <h2 className="auth-success-heading">Account created!</h2>
             {setupInfo.mode === "totp" ? (
               <>
@@ -186,7 +199,7 @@ export default function LoginPage() {
                     style={{ marginTop: 8, width: "100%" }}
                     onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
                   >
-                    🔄 Retry Login (after backend wakes)
+                    Retry Login (after backend wakes)
                   </button>
                 )}
               </div>

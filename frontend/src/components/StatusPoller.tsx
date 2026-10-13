@@ -109,20 +109,20 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
           <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #606060)", fontWeight: 700, display: "block" }}>
             {role === "candidate" ? "Candidate Submission ID" : "Recruiter Batch ID"}
           </span>
-          <code style={{ fontSize: "0.82rem", color: "var(--ink, #150202)", wordBreak: "break-all" }}>{batchId}</code>
+          <code style={{ fontSize: "0.88rem", color: "var(--ink, #150202)", wordBreak: "break-all", fontWeight: 600 }}>{batchId}</code>
         </div>
         <button
           type="button"
           className="ghost"
-          style={{ fontSize: "0.78rem", padding: "5px 10px", whiteSpace: "nowrap", flexShrink: 0 }}
+          style={{ fontSize: "0.84rem", padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0, borderRadius: "6px", border: "1px solid var(--color-grey-1, #C6C6C6)", cursor: "pointer", fontWeight: 600 }}
           onClick={copyBatchId}
           aria-label="Copy Batch ID to clipboard"
         >
-          {copied ? "Copied! ✓" : "Copy ID"}
+          {copied ? "Copied" : "Copy ID"}
         </button>
       </div>
 
-      <p className="field-help">{status.progress_percentage.toFixed(0)}% complete</p>
+      <p className="field-help" style={{ fontSize: "0.9rem" }}>{status.progress_percentage.toFixed(0)}% complete</p>
       <div
         className="progress"
         role="progressbar"
@@ -133,25 +133,25 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
       >
         <span style={{ width: `${status.progress_percentage}%` }} />
       </div>
-      <div className="status-meta">
+      <div className="status-meta" style={{ fontSize: "0.88rem" }}>
         <span>{status.processed_files} of {status.total_files} processed</span>
-        {status.failed_files > 0 && <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 600 }}>{status.failed_files} failed</span>}
+        {status.failed_files > 0 && <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 650 }}>{status.failed_files} failed</span>}
         {status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}
       </div>
 
       {status.failed_files > 0 && (
-        <div style={{ marginTop: "14px", padding: "12px", background: "rgba(239, 68, 68, 0.07)", border: "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--color-coral-red, #DC3545)" }}>
-              ⚠️ {status.failed_files} résumé(s) failed evaluation
+        <div style={{ marginTop: "16px", padding: "16px 18px", background: "var(--bad-soft, #FDE8E8)", border: "1px solid var(--color-coral-red, #DC3545)", borderRadius: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+            <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--color-coral-red, #DC3545)" }}>
+              {status.failed_files} candidate file(s) failed evaluation
             </span>
           </div>
           {status.error_logs && status.error_logs.length > 0 ? (
             <div>
-              <span style={{ fontSize: "0.74rem", fontWeight: 600, color: "var(--muted, #606060)", display: "block", marginBottom: "4px" }}>
-                Failure logs & details:
+              <span style={{ fontSize: "0.84rem", fontWeight: 650, color: "var(--muted, #606060)", display: "block", marginBottom: "6px" }}>
+                Diagnostic logs:
               </span>
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "var(--color-coral-red, #DC3545)", wordBreak: "break-word" }}>
+              <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.85rem", color: "var(--color-coral-red, #DC3545)", wordBreak: "break-word" }}>
                 {status.error_logs.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}

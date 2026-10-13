@@ -168,9 +168,13 @@ export function SiteHeader() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span aria-hidden="true" style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 id="delete-account-modal-title" style={{ color: "var(--color-coral-red, #DC3545)" }}>Delete Account</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #DC3545)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <h2 id="delete-account-modal-title" style={{ color: "var(--color-coral-red, #DC3545)", margin: 0, fontSize: "1.2rem" }}>Delete Account</h2>
               </div>
               <button
                 type="button"
@@ -178,8 +182,12 @@ export function SiteHeader() {
                 aria-label="Close delete account dialog"
                 disabled={isDeleting}
                 onClick={() => setShowDeleteModal(false)}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
 

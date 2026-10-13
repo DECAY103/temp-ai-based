@@ -34,16 +34,16 @@ function LeaderboardContent() {
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
         <h1 style={{ margin: 0 }}>Candidate Leaderboard</h1>
         {batchId && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--line, #EBEAEA)", borderRadius: "8px", padding: "6px 12px" }}>
-            <span style={{ fontSize: "0.75rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Batch ID:</span>
-            <code style={{ fontSize: "0.82rem", color: "var(--ink, #150202)" }}>{batchId}</code>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "8px", padding: "7px 14px" }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 650 }}>Batch ID:</span>
+            <code style={{ fontSize: "0.88rem", color: "var(--ink, #150202)", fontWeight: 600 }}>{batchId}</code>
             <button
               type="button"
               className="ghost"
-              style={{ fontSize: "0.75rem", padding: "3px 8px", marginLeft: "4px" }}
+              style={{ fontSize: "0.82rem", padding: "4px 10px", marginLeft: "4px", borderRadius: "6px", border: "1px solid var(--color-grey-1, #C6C6C6)", cursor: "pointer", fontWeight: 600 }}
               onClick={copyBatchId}
             >
-              {copied ? "Copied! ✓" : "Copy ID"}
+              {copied ? "Copied" : "Copy ID"}
             </button>
           </div>
         )}

@@ -87,7 +87,18 @@ export function PasswordStrengthMeter({ password, onChange }: PasswordStrengthMe
       <ul className="strength-checks">
         {Object.entries(strength.checks).map(([key, ok]) => (
           <li key={key} className={ok ? "check-pass" : "check-fail"}>
-            <span className="check-icon">{ok ? "✓" : "○"}</span> {LABELS[key] ?? key}
+            <span className="check-icon" style={{ display: "inline-flex", alignItems: "center", marginRight: "6px" }}>
+              {ok ? (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8" />
+                </svg>
+              )}
+            </span>
+            <span>{LABELS[key] ?? key}</span>
           </li>
         ))}
       </ul>
