@@ -132,7 +132,7 @@ export function SiteHeader() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#dc2626",
+                      color: "var(--color-coral-red, #DC3545)",
                       fontSize: "0.86rem",
                       cursor: "pointer",
                       padding: 0,
@@ -167,10 +167,10 @@ export function SiteHeader() {
             style={{ maxWidth: 460 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="admin-modal-header" style={{ borderBottomColor: "#fee2e2" }}>
+            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span aria-hidden="true" style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 id="delete-account-modal-title" style={{ color: "#b91c1c" }}>Delete Account</h2>
+                <h2 id="delete-account-modal-title" style={{ color: "var(--color-coral-red, #DC3545)" }}>Delete Account</h2>
               </div>
               <button
                 type="button"
@@ -184,10 +184,10 @@ export function SiteHeader() {
             </div>
 
             <div className="admin-modal-body">
-              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "#334155", lineHeight: 1.5 }}>
+              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "var(--ink)", lineHeight: 1.5 }}>
                 Are you sure you want to permanently delete your account?
               </p>
-              <p style={{ margin: 0, fontSize: "0.84rem", color: "#64748b", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "0.84rem", color: "var(--muted)", lineHeight: 1.5 }}>
                 This action is permanent and cannot be undone. All your session data, role permissions,
                 and credentials will be immediately purged.
               </p>
@@ -197,9 +197,9 @@ export function SiteHeader() {
                   style={{
                     marginTop: 14,
                     padding: "8px 12px",
-                    background: "#fef2f2",
-                    border: "1px solid #fecaca",
-                    color: "#b91c1c",
+                    background: "var(--bad-soft, #FDE8E8)",
+                    border: "1px solid var(--color-coral-red, #DC3545)",
+                    color: "var(--color-coral-red, #DC3545)",
                     borderRadius: 8,
                     fontSize: "0.82rem",
                   }}

@@ -123,23 +123,23 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
       {failed.length > 0 && (
         <div style={{ marginTop: "28px", padding: "18px 20px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", color: "#dc2626", fontWeight: 700 }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--color-coral-red, #DC3545)", fontWeight: 700 }}>
               ⚠️ {failed.length} Failed Evaluation{failed.length === 1 ? "" : "s"} & Error Logs
             </h3>
           </div>
-          <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+          <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "var(--muted, #606060)" }}>
             These files could not be evaluated by the pipeline. Inspect the specific error messages below to diagnose:
           </p>
           <div style={{ display: "grid", gap: "10px" }}>
             {failed.map((f, i) => (
-              <div key={f.candidate_id || i} style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px", padding: "12px 14px" }}>
+              <div key={f.candidate_id || i} style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--color-linen, #EBEAEA)", borderRadius: "8px", padding: "12px 14px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
                   <strong style={{ fontSize: "0.86rem" }}>{f.filename || `Candidate #${i + 1}`}</strong>
-                  <span style={{ fontSize: "0.72rem", background: "rgba(239, 68, 68, 0.12)", color: "#b91c1c", padding: "2px 8px", borderRadius: "99px", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.72rem", background: "var(--bad-soft, #FDE8E8)", color: "var(--color-coral-red, #DC3545)", padding: "2px 8px", borderRadius: "99px", fontWeight: 700 }}>
                     Failed
                   </span>
                 </div>
-                <div style={{ background: "var(--surface-soft, #f8fafc)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--line, #e2e8f0)", fontFamily: "monospace", fontSize: "0.78rem", color: "#b91c1c", wordBreak: "break-word" }}>
+                <div style={{ background: "var(--surface-soft, #FAFAFA)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--color-linen, #EBEAEA)", fontFamily: "monospace", fontSize: "0.78rem", color: "var(--color-coral-red, #DC3545)", wordBreak: "break-word" }}>
                   {f.error_log || f.verdict_summary || "No specific error log recorded."}
                 </div>
               </div>

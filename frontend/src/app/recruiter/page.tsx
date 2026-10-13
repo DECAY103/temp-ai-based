@@ -125,7 +125,7 @@ export default function RecruiterPage() {
                 key={job.batch_id}
                 style={{
                   background: "var(--surface, #ffffff)",
-                  border: "1px solid var(--line, #e2e8f0)",
+                  border: "1px solid var(--line, #EBEAEA)",
                   borderRadius: "12px",
                   padding: "16px 20px",
                   display: "flex",
@@ -133,7 +133,7 @@ export default function RecruiterPage() {
                   justifyContent: "space-between",
                   flexWrap: "wrap",
                   gap: "16px",
-                  boxShadow: "var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05))",
+                  boxShadow: "var(--shadow-sm)",
                 }}
               >
                 <div style={{ minWidth: "220px", flex: "1 1 300px" }}>
@@ -141,7 +141,7 @@ export default function RecruiterPage() {
                     <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>{job.title || "Job Rubric Batch"}</h3>
                     <span className="status-chip" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>{job.status}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", fontSize: "0.82rem", color: "var(--muted, #606060)" }}>
                     <span>{job.candidate_count > 0 ? `${job.candidate_count} candidates evaluated` : `${job.total_files} file(s)`}</span>
                     {job.created_at && <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>}
                     <span>ID: <code style={{ fontSize: "0.78rem" }}>{job.batch_id.slice(0, 8)}…</code></span>

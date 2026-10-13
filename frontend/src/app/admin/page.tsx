@@ -188,11 +188,11 @@ export default function AdminPage() {
       {resetSuccessMessage && (
         <div
           style={{
-            background: "#f0fdf4",
-            border: "1px solid #bbf7d0",
+            background: "var(--good-soft, #E8F5E9)",
+            border: "1px solid var(--color-liberty-green, #198754)",
             borderRadius: "10px",
             padding: "14px 18px",
-            color: "#166534",
+            color: "var(--color-liberty-green, #198754)",
             marginBottom: "20px",
             display: "flex",
             justifyContent: "space-between",
@@ -203,7 +203,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setResetSuccessMessage(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#166534", fontWeight: 700 }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", fontWeight: 700 }}
           >
             ✕
           </button>
@@ -213,11 +213,11 @@ export default function AdminPage() {
       {error && (
         <div
           style={{
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
+            background: "var(--bad-soft, #FDE8E8)",
+            border: "1px solid var(--color-coral-red, #DC3545)",
             borderRadius: "10px",
             padding: "14px 18px",
-            color: "#991b1b",
+            color: "var(--color-coral-red, #DC3545)",
             marginBottom: "20px",
           }}
         >
@@ -378,9 +378,9 @@ export default function AdminPage() {
                               type="button"
                               className="admin-btn-action"
                               style={{
-                                background: "#fef2f2",
-                                color: "#dc2626",
-                                border: "1px solid #fecaca",
+                                background: "var(--bad-soft, #FDE8E8)",
+                                color: "var(--color-coral-red, #DC3545)",
+                                border: "1px solid var(--color-coral-red, #DC3545)",
                               }}
                               onClick={() => setUserToDelete(u)}
                               title="Delete user record"
@@ -550,7 +550,7 @@ export default function AdminPage() {
                         <td>
                           <span
                             style={{
-                              color: t.status === "success" ? "#16a34a" : "#dc2626",
+                              color: t.status === "success" ? "var(--color-liberty-green, #198754)" : "var(--color-coral-red, #DC3545)",
                               fontWeight: 600,
                               fontSize: "0.8rem",
                             }}
@@ -590,11 +590,11 @@ export default function AdminPage() {
 
             <div className="admin-modal-body">
               {loadingUserLogs ? (
-                <p style={{ textAlign: "center", color: "#64748b", padding: "20px" }}>
+                <p style={{ textAlign: "center", color: "var(--muted, #606060)", padding: "20px" }}>
                   Retrieving user activity logs...
                 </p>
               ) : userLogs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
+                <div style={{ textAlign: "center", padding: "30px", color: "var(--muted, #606060)" }}>
                   No logged activity records for this user yet.
                 </div>
               ) : (
@@ -604,26 +604,26 @@ export default function AdminPage() {
                       key={log.id}
                       style={{
                         padding: "12px 14px",
-                        background: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        background: "var(--surface-soft, #FAFAFA)",
+                        border: "1px solid var(--line, #EBEAEA)",
                         borderRadius: "8px",
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <code style={{ fontWeight: 700, color: "#4f46e5", fontSize: "0.85rem" }}>
+                        <code style={{ fontWeight: 700, color: "var(--accent, #1D0A69)", fontSize: "0.85rem" }}>
                           {log.action}
                         </code>
-                        <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                        <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>
                           {formatTimestamp(log.created_at)}
                         </span>
                       </div>
                       {log.detail && (
-                        <p style={{ margin: "4px 0", fontSize: "0.84rem", color: "#334155" }}>
+                        <p style={{ margin: "4px 0", fontSize: "0.84rem", color: "var(--ink, #150202)" }}>
                           {log.detail}
                         </p>
                       )}
                       {log.ip_address && (
-                        <p style={{ margin: "2px 0 0", fontSize: "0.74rem", color: "#94a3b8", fontFamily: "monospace" }}>
+                        <p style={{ margin: "2px 0 0", fontSize: "0.74rem", color: "var(--muted, #606060)", fontFamily: "monospace" }}>
                           IP: {log.ip_address}
                         </p>
                       )}
@@ -754,10 +754,10 @@ export default function AdminPage() {
             style={{ maxWidth: 460 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="admin-modal-header" style={{ borderBottomColor: "#fee2e2" }}>
+            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 style={{ color: "#b91c1c" }}>Delete User Account</h2>
+                <h2 style={{ color: "var(--color-coral-red, #DC3545)" }}>Delete User Account</h2>
               </div>
               <button
                 type="button"
@@ -770,20 +770,20 @@ export default function AdminPage() {
             </div>
 
             <div className="admin-modal-body">
-              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "#334155", lineHeight: 1.5 }}>
+              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "var(--ink, #150202)", lineHeight: 1.5 }}>
                 Are you sure you want to permanently delete this user?
               </p>
               <div
                 style={{
                   padding: "10px 14px",
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--surface-soft, #FAFAFA)",
+                  border: "1px solid var(--line, #EBEAEA)",
                   borderRadius: 8,
                   marginBottom: 12,
                 }}
               >
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>{userToDelete.email}</div>
-                <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                <div style={{ fontWeight: 700, color: "var(--ink, #150202)" }}>{userToDelete.email}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--muted, #606060)" }}>
                   Role: {userToDelete.role} • ID: {userToDelete.id}
                 </div>
               </div>

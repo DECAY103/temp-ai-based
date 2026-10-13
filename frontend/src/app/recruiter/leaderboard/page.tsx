@@ -34,9 +34,9 @@ function LeaderboardContent() {
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
         <h1 style={{ margin: 0 }}>Candidate Leaderboard</h1>
         {batchId && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--surface-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px", padding: "6px 12px" }}>
-            <span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", fontWeight: 600 }}>Batch ID:</span>
-            <code style={{ fontSize: "0.82rem", color: "var(--text, #0f172a)" }}>{batchId}</code>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--line, #EBEAEA)", borderRadius: "8px", padding: "6px 12px" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Batch ID:</span>
+            <code style={{ fontSize: "0.82rem", color: "var(--ink, #150202)" }}>{batchId}</code>
             <button
               type="button"
               className="ghost"

@@ -91,9 +91,9 @@ export default function LoginPage() {
         {deletedNotice && (
           <div
             style={{
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
-              color: "#166534",
+              background: "var(--good-soft, #E8F5E9)",
+              border: "1px solid var(--color-liberty-green, #198754)",
+              color: "var(--color-liberty-green, #198754)",
               padding: "10px 14px",
               borderRadius: "8px",
               marginBottom: "16px",
@@ -107,7 +107,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setDeletedNotice(false)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#166534", fontWeight: 700 }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", fontWeight: 700 }}
             >
               ✕
             </button>

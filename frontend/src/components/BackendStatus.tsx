@@ -40,10 +40,10 @@ export function BackendStatus() {
 
   const statusColors: Record<string, string> = {
     checking: "var(--accent)",
-    ok: "#10b981", // Emerald green
-    waking: "#f59e0b", // Amber yellow
-    degraded: "#f97316", // Orange
-    error: "#ef4444", // Red
+    ok: "var(--color-liberty-green, #198754)", // Liberty Green
+    waking: "var(--color-mustard-yellow, #FFC107)", // Mustard Yellow
+    degraded: "var(--color-mustard-yellow, #FFC107)", // Mustard Yellow
+    error: "var(--color-coral-red, #DC3545)", // Coral Red
   };
 
   return (
@@ -101,9 +101,9 @@ export function BackendStatus() {
               <span className="stat-name">Database</span>
               <span className="stat-val">
                 {health?.database === "connected" ? (
-                  <span style={{ color: "#10b981", fontWeight: 600 }}>Connected ✓</span>
+                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 600 }}>Connected ✓</span>
                 ) : (
-                  <span style={{ color: "#ef4444", fontWeight: 600 }}>
+                  <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 600 }}>
                     {health?.database || "Disconnected"}
                   </span>
                 )}
@@ -119,11 +119,11 @@ export function BackendStatus() {
               <span className="stat-name">Email Delivery</span>
               <span className="stat-val">
                 {health?.email_delivery === "gmail_https" ? (
-                  <span style={{ color: "#10b981", fontWeight: 600 }}>Gmail HTTPS ✓</span>
+                  <span style={{ color: "var(--color-liberty-green, #198754)", fontWeight: 600 }}>Gmail HTTPS ✓</span>
                 ) : health?.email_delivery === "smtp" ? (
-                  <span style={{ color: "#3b82f6", fontWeight: 600 }}>SMTP Legacy ✓</span>
+                  <span style={{ color: "var(--color-blue, #0D6EFD)", fontWeight: 600 }}>SMTP Legacy ✓</span>
                 ) : (
-                  <span style={{ color: "#64748b" }}>Console logs only</span>
+                  <span style={{ color: "var(--color-grey-3, #606060)" }}>Console logs only</span>
                 )}
               </span>
             </div>
