@@ -1,16 +1,10 @@
 /**
  * 2FA verification page — supports both email-OTP and TOTP.
- * Owner: Person 1 (M.2)
- *
- * Key behaviours:
- *  - Reads temp_token, otp_mode, and hint from search params.
- *  - Shows appropriate instructions based on otp_mode ("email" vs "totp").
- *  - After verification: shows last-login banner PERMANENTLY (no auto-redirect timer).
- *    The user clicks "Go to dashboard" to proceed.
+ * Pre-fetches dashboard routes and validates OTP instantly on 6th digit entry.
  */
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { authApi } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -23,84 +17,63 @@ function VerifyForm() {
 
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [lastLogin, setLastLogin] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  // Pre-fetch destination routes in the background while user reads code
+  useEffect(() => {
+    router.prefetch("/recruiter");
+    router.prefetch("/candidate");
+    router.prefetch("/admin");
+  }, [router]);
+
+  const doVerify = async (cleanCode: string) => {
+    if (isSubmittingRef.current) return;
+    if (cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) return;
+    if (!tempToken) {
+      setError("Verification session has expired or is invalid. Please sign in again.");
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { role: userRole, last_login_at } = await authApi.verify(tempToken, cleanCode);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_role", userRole);
+        localStorage.setItem("user_last_login", last_login_at || "first_login");
+      }
+      const destination = userRole === "admin" ? "/admin" : userRole === "recruiter" ? "/recruiter" : "/candidate";
+      router.push(destination);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Verification failed. Please check the code and try again.");
+      setLoading(false);
+      isSubmittingRef.current = false;
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const { role: userRole, last_login_at } = await authApi.verify(tempToken, code);
-      setRole(userRole);
-      setLastLogin(last_login_at);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("user_role", userRole);
-      }
-      setVerified(true);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-    } finally {
-      setLoading(false);
+    const cleanCode = code.trim();
+
+    if (!tempToken) {
+      setError("Verification session has expired or is invalid. Please sign in again.");
+      return;
     }
+    if (!cleanCode) {
+      setError("Please enter your 6-digit verification code.");
+      return;
+    }
+    if (cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) {
+      setError("The verification code must be exactly 6 digits.");
+      return;
+    }
+
+    await doVerify(cleanCode);
   }
 
-  // ── Post-verification screen (stays until the user clicks the button) ──────
-  if (verified) {
-    const formattedLogin = lastLogin
-      ? new Date(lastLogin).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-      : null;
-    const destination = role === "admin" ? "/admin" : role === "recruiter" ? "/recruiter" : "/candidate";
-
-    return (
-      <main className="auth-shell">
-        <div className="auth-bg-decoration" aria-hidden="true">
-          <div className="auth-orb auth-orb--1" />
-          <div className="auth-orb auth-orb--2" />
-        </div>
-        <section className="auth-card-v2">
-          <div className="auth-brand">
-            <span className="brand-mark" aria-hidden="true">R</span>
-            <span className="brand-name">Resume Screening</span>
-          </div>
-
-          <div className="auth-success-icon verified-checkmark">✓</div>
-          <h1 className="auth-title" style={{ marginTop: "12px" }}>Session verified!</h1>
-          <p className="auth-subtitle">Your identity has been confirmed.</p>
-
-          {formattedLogin ? (
-            <div className="last-login-banner">
-              <span className="last-login-icon">🕐</span>
-              <div>
-                <p className="last-login-label">Your last login was</p>
-                <p className="last-login-time">{formattedLogin}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="last-login-banner">
-              <span className="last-login-icon">🎉</span>
-              <div>
-                <p className="last-login-label">First login</p>
-                <p className="last-login-time">Welcome to Resume Screening!</p>
-              </div>
-            </div>
-          )}
-
-          <button
-            className="primary auth-submit-btn"
-            style={{ marginTop: "24px" }}
-            onClick={() => router.push(destination)}
-          >
-            Go to dashboard →
-          </button>
-        </section>
-      </main>
-    );
-  }
-
-  // ── Verification form ─────────────────────────────────────────────────────
   const isEmail = otpMode === "email";
 
   return (
@@ -120,7 +93,7 @@ function VerifyForm() {
           {hint ||
             (isEmail
               ? "A 6-digit code was sent to your email address."
-              : "Enter the current code from your authenticator app.")}
+              : "Enter the 6-digit code from your authenticator app.")}
         </p>
 
         {isEmail && (
@@ -142,13 +115,28 @@ function VerifyForm() {
               placeholder="000000"
               maxLength={6}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              autoFocus
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                setCode(digits);
+                if (error && digits.length === 6) {
+                  setError(null);
+                }
+                if (digits.length === 6 && !loading) {
+                  void doVerify(digits);
+                }
+              }}
               required
               className="otp-input"
             />
           </div>
           {error && <p className="message error-message" role="alert">{error}</p>}
-          <button className="primary auth-submit-btn" id="verify-submit" type="submit" disabled={loading}>
+          <button
+            className="primary auth-submit-btn"
+            id="verify-submit"
+            type="submit"
+            disabled={loading || code.trim().length !== 6}
+          >
             {loading ? "Verifying…" : "Verify →"}
           </button>
         </form>

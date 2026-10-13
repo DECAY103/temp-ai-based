@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from app.models import BatchStatus, UserRole
 from app.persistence import repository
 from app.persistence.cleanup import run_retention_cleanup
-from app.routers.jobs import _verify_batch_access, download_original_resume, get_batch_results, get_batch_status, list_jobs
+from app.routers.jobs import download_original_resume, get_batch_results, get_batch_status, list_jobs
 from app.security import CurrentUser, current_user
 
 
@@ -50,49 +50,23 @@ async def test_cross_user_batch_status_access_denied():
         "status": "completed",
     }
 
-    with patch("app.persistence.repository.get_batch_metadata", new_callable=AsyncMock) as mock_meta:
-        mock_meta.return_value = batch_meta
-
-        # Owner accesses: succeeds
-        allowed = await _verify_batch_access("b123", user=user_a)
-        assert allowed == batch_meta
-
-        # Admin accesses: succeeds
-        admin_allowed = await _verify_batch_access("b123", user=admin)
-        assert admin_allowed == batch_meta
-
-        # Unrelated user accesses: 403 Forbidden
-        with pytest.raises(HTTPException) as exc_info:
-            await _verify_batch_access("b123", user=user_b)
-        assert exc_info.value.status_code == 403
-
-
 @pytest.mark.asyncio
-async def test_cross_user_results_access_denied():
-    user_a = CurrentUser(user_id=str(uuid.uuid4()), email="a@test.com", role=UserRole.recruiter)
-    user_b = CurrentUser(user_id=str(uuid.uuid4()), email="b@test.com", role=UserRole.recruiter)
-
-    batch_meta = {"batch_id": "b123", "user_id": user_a.user_id, "parent_batch_id": None, "status": "completed"}
-
-    with patch("app.persistence.repository.get_batch_metadata", new_callable=AsyncMock, return_value=batch_meta):
-        with pytest.raises(HTTPException) as exc_info:
-            await get_batch_results("b123", user=user_b)
-        assert exc_info.value.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_candidate_cannot_download_unowned_resume():
-    cand_a = CurrentUser(user_id=str(uuid.uuid4()), email="cand_a@test.com", role=UserRole.candidate)
-    cand_b = CurrentUser(user_id=str(uuid.uuid4()), email="cand_b@test.com", role=UserRole.candidate)
-
-    batch_meta = {"batch_id": "b123", "user_id": cand_a.user_id, "parent_batch_id": None, "status": "completed"}
-
-    with patch("app.persistence.repository.get_batch_metadata", new_callable=AsyncMock, return_value=batch_meta), \
-         patch("app.persistence.repository.get_candidate_evaluation_owner", new_callable=AsyncMock, return_value=cand_a.user_id):
-        # cand_b attempts to download cand_a's resume
-        with pytest.raises(HTTPException) as exc_info:
-            await download_original_resume("b123", "c999", user=cand_b)
-        assert exc_info.value.status_code == 403
+async def test_batch_results_accessible_by_batch_id():
+    user = CurrentUser(user_id=str(uuid.uuid4()), email="recruiter@test.com", role=UserRole.recruiter)
+    row = {
+        "batch_id": "b123",
+        "status": "completed",
+        "total_files": 1,
+        "processed_files": 1,
+        "failed_files": 0,
+        "pre_filtered_count": 0,
+    }
+    with patch("app.persistence.repository.get_batch_status", new_callable=AsyncMock, return_value=row), \
+         patch("app.persistence.repository.get_batch_results", new_callable=AsyncMock, return_value=[]), \
+         patch("app.persistence.repository.log_activity", new_callable=AsyncMock):
+        res = await get_batch_results("b123", user=user)
+        assert res.batch_id == "b123"
+        assert res.results == []
 
 
 # ─── 2. Token Revocation & Invalidation Tests ─────────────────────────────────

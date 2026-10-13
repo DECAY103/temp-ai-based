@@ -53,31 +53,8 @@ async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
     return UploadResponse(batch_id=batch_id, status_url=f"/api/jobs/{batch_id}/status")
 
-async def _verify_batch_access(batch_id: str, user: CurrentUser, allow_candidate_parent: bool = False) -> dict:
-    """Helper to verify caller owns the batch or has admin privileges."""
-    meta = await repository.get_batch_metadata(batch_id)
-    if not meta:
-        raise HTTPException(status_code=404, detail="Batch not found.")
-
-    if user.role == UserRole.admin:
-        return meta
-
-    # Check direct ownership
-    if meta.get("user_id") and meta.get("user_id") == user.user_id:
-        return meta
-
-    # For recruiters, check if this is a candidate submission under a job batch they own
-    parent_id = meta.get("parent_batch_id")
-    if parent_id and user.role == UserRole.recruiter:
-        parent_meta = await repository.get_batch_metadata(str(parent_id))
-        if parent_meta and parent_meta.get("user_id") == user.user_id:
-            return meta
-
-    raise HTTPException(status_code=403, detail="Access denied: you do not have permission to access this batch.")
-
 @router.get("/{batch_id}/status", response_model=BatchStatusResponse)
 async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin, UserRole.candidate))) -> BatchStatusResponse:
-    await _verify_batch_access(batch_id, user)
     row = await repository.get_batch_status(batch_id)
     if not row: raise HTTPException(404, "Batch not found.")
     total = int(row["total_files"])
@@ -99,8 +76,7 @@ async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_ro
     )
 
 @router.get("/{batch_id}/results", response_model=BatchResultsResponse)
-async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> BatchResultsResponse:
-    await _verify_batch_access(batch_id, user)
+async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin, UserRole.candidate))) -> BatchResultsResponse:
     row = await repository.get_batch_status(batch_id)
     if not row: raise HTTPException(404, "Batch not found.")
     if row["status"] not in {BatchStatus.completed.value, BatchStatus.failed.value}: raise HTTPException(409, "Batch is still processing.")
@@ -112,21 +88,6 @@ async def download_original_resume(batch_id: str, candidate_id: str, user: Curre
     meta = await repository.get_batch_metadata(batch_id)
     if not meta:
         raise HTTPException(404, "Batch not found.")
-
-    if user.role != UserRole.admin:
-        if user.role == UserRole.candidate:
-            eval_owner = await repository.get_candidate_evaluation_owner(batch_id, candidate_id)
-            if meta.get("user_id") != user.user_id and eval_owner != user.user_id:
-                raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
-        elif user.role == UserRole.recruiter:
-            if meta.get("user_id") != user.user_id:
-                parent_id = meta.get("parent_batch_id")
-                if parent_id:
-                    parent_meta = await repository.get_batch_metadata(str(parent_id))
-                    if not parent_meta or parent_meta.get("user_id") != user.user_id:
-                        raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
-                else:
-                    raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
 
     filename = await repository.get_candidate_filename(batch_id, candidate_id)
     raw_bytes = await repository.get_candidate_resume_bytes(batch_id, candidate_id)

@@ -12,6 +12,7 @@
 
 import { UploadForm } from "@/components/UploadForm";
 import { StatusPoller } from "@/components/StatusPoller";
+import { LastLoginBanner } from "@/components/LastLoginBanner";
 import { useEffect, useState } from "react";
 import { jobsApi, type JobSummary } from "@/lib/api";
 import Link from "next/link";
@@ -88,6 +89,7 @@ export default function RecruiterPage() {
 
   return (
     <main className="shell">
+      <LastLoginBanner />
       <header className="hero">
         <p className="eyebrow">Recruiter workspace</p>
         <h1>Evaluate a resume batch.</h1>

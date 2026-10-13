@@ -12,6 +12,7 @@
 
 import { UploadForm } from "@/components/UploadForm";
 import { StatusPoller } from "@/components/StatusPoller";
+import { LastLoginBanner } from "@/components/LastLoginBanner";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -22,6 +23,7 @@ function CandidatePortalContent() {
 
   return (
     <main className="shell">
+      <LastLoginBanner />
       <header className="hero">
         <p className="eyebrow">Candidate portal</p>
         <h1>Submit your résumé.</h1>

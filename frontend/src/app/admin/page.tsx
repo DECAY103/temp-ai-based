@@ -7,6 +7,7 @@ import {
   type ActivityLogEntry,
   type TransferAuditLog,
 } from "@/lib/api";
+import { LastLoginBanner } from "@/components/LastLoginBanner";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"users" | "activity" | "transfers">("users");
@@ -172,6 +173,7 @@ export default function AdminPage() {
 
   return (
     <main className="admin-shell">
+      <LastLoginBanner />
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className="admin-header">
         <p className="admin-eyebrow">Metadata-only audit & security oversight</p>

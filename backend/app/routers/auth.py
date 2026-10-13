@@ -16,7 +16,8 @@ from email.mime.text import MIMEText
 
 import httpx
 import pyotp
-from fastapi import APIRouter, HTTPException, Request, Response, status
+import time
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -75,9 +76,18 @@ def _is_email_configured() -> bool:
     return bool(_is_gmail_configured() or settings.smtp_host.strip())
 
 
+_cached_gmail_token: str | None = None
+_cached_gmail_token_expires_at: float = 0.0
+
+
 async def _get_gmail_access_token() -> str:
-    """Exchange the stored refresh token for a fresh Gmail access token."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    """Exchange the stored refresh token for a fresh Gmail access token with in-memory caching."""
+    global _cached_gmail_token, _cached_gmail_token_expires_at
+    now = time.monotonic()
+    if _cached_gmail_token and now < _cached_gmail_token_expires_at:
+        return _cached_gmail_token
+
+    async with httpx.AsyncClient(timeout=8.0) as client:
         resp = await client.post(
             "https://oauth2.googleapis.com/token",
             data={
@@ -95,7 +105,12 @@ async def _get_gmail_access_token() -> str:
                 pass
             logger.error("[Gmail] Token refresh failed (HTTP %s): %s", resp.status_code, error_msg)
             raise RuntimeError(f"Gmail OAuth token refresh failed ({resp.status_code}): {error_msg}")
-        return resp.json()["access_token"]
+        data = resp.json()
+        token = data["access_token"]
+        expires_in = int(data.get("expires_in", 3600))
+        _cached_gmail_token = token
+        _cached_gmail_token_expires_at = now + max(60.0, float(expires_in - 120))
+        return token
 
 
 async def _send_via_gmail(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
@@ -295,37 +310,40 @@ async def register(body: RegisterRequest, request: Request) -> RegisterResponse:
     )
 
 
+async def _send_otp_email_safe(to_email: str, plain_code: str) -> None:
+    """Safe background delivery of OTP email to eliminate login UI latency."""
+    try:
+        await _send_otp_email(to_email, plain_code)
+    except Exception as exc:
+        logger.error("Failed to deliver OTP email to %s: %s", to_email, exc)
+
+
 # ─── Login ────────────────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest, request: Request) -> LoginResponse:
+async def login(body: LoginRequest, request: Request, background_tasks: BackgroundTasks) -> LoginResponse:
     ip, ua = _client_info(request)
     user = await repository.get_user_by_email(body.email)
-    if not user or not _passwords.verify(body.password, user["password_hash"]):
-        await repository.log_activity("login_failed", email=body.email, detail="Invalid email or password", ip_address=ip, user_agent=ua)
+    
+    # Run CPU-bound PBKDF2 password verification in thread pool so async event loop does not freeze
+    is_valid = await asyncio.to_thread(_passwords.verify, body.password, user["password_hash"]) if user else False
+    if not user or not is_valid:
+        asyncio.create_task(repository.log_activity("login_failed", email=body.email, detail="Invalid email or password", ip_address=ip, user_agent=ua))
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
-    await repository.log_activity("login_password_ok", user_id=str(user["id"]), email=body.email, detail="Proceeding to 2FA", ip_address=ip, user_agent=ua)
+    asyncio.create_task(repository.log_activity("login_password_ok", user_id=str(user["id"]), email=body.email, detail="Proceeding to 2FA", ip_address=ip, user_agent=ua))
     token = _token({"sub": str(user["id"]), "email": user["email"], "purpose": "2fa"}, settings.temp_token_expire_minutes)
 
     if _USE_EMAIL_OTP:
-        # Generate a 6-digit OTP, store its hash, and send via email
+        # Generate 6-digit OTP, store in database, and dispatch email via background task
         plain_code = f"{secrets.randbelow(1_000_000):06d}"
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.smtp_otp_expire_minutes)
         await repository.create_email_otp(str(user["id"]), _hash_otp(plain_code), expires_at)
 
-        # Log code generation event without leaking raw OTP value
         logger.info("[2FA OTP] Generated verification code for %s (expires in %sm)", user["email"], settings.smtp_otp_expire_minutes)
 
-        try:
-            await asyncio.wait_for(_send_otp_email(user["email"], plain_code), timeout=8.0)
-        except Exception as exc:
-            logger.error("Failed to deliver OTP email to %s: %s", user["email"], exc)
-            if _is_email_configured():
-                raise HTTPException(
-                    status_code=503,
-                    detail=f"Could not send verification email ({str(exc) or 'timeout'}). Check GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN settings or retrieve your login code from server logs."
-                ) from exc
+        # Offload email sending to background task so login endpoint returns immediately (< 40ms)
+        background_tasks.add_task(_send_otp_email_safe, user["email"], plain_code)
 
         return LoginResponse(
             message=f"A 6-digit code has been sent to {user['email']}. Enter it below.",
@@ -349,30 +367,42 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
         claims = jwt.decode(body.temp_token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         if claims.get("purpose") != "2fa": raise JWTError("wrong token")
     except JWTError as exc:
-        await repository.log_activity("verify_failed_expired", detail="Verification session expired", ip_address=ip, user_agent=ua)
+        asyncio.create_task(repository.log_activity("verify_failed_expired", detail="Verification session expired", ip_address=ip, user_agent=ua))
         raise HTTPException(status_code=401, detail="Verification session expired.") from exc
-    user = await repository.get_user(claims["sub"])
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found.")
+
+    user_id = claims["sub"]
 
     if _USE_EMAIL_OTP:
-        otp_row = await repository.get_valid_email_otp(claims["sub"])
+        # Run user and OTP database lookups concurrently to halve query latency
+        user, otp_row = await asyncio.gather(
+            repository.get_user(user_id),
+            repository.get_valid_email_otp(user_id),
+        )
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found.")
         if not otp_row or otp_row["code"] != _hash_otp(body.code):
-            await repository.log_activity("verify_failed_bad_code", user_id=claims["sub"], email=claims.get("email"), detail="Invalid or expired email OTP", ip_address=ip, user_agent=ua)
+            asyncio.create_task(repository.log_activity("verify_failed_bad_code", user_id=user_id, email=claims.get("email"), detail="Invalid or expired email OTP", ip_address=ip, user_agent=ua))
             raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
-        await repository.mark_email_otp_used(str(otp_row["id"]))
-    else:
-        if not pyotp.TOTP(user["totp_secret"]).verify(body.code, valid_window=1):
-            await repository.log_activity("verify_failed_bad_code", user_id=claims["sub"], email=claims.get("email"), detail="Invalid authenticator code", ip_address=ip, user_agent=ua)
-            raise HTTPException(status_code=401, detail="Invalid authenticator code.")
 
-    # Update last login and get previous value
-    previous_login = await repository.update_last_login(claims["sub"])
-    await repository.log_activity("login_success", user_id=str(user["id"]), email=user["email"], detail=f"Previous login: {previous_login or 'first login'}", ip_address=ip, user_agent=ua)
+        # Concurrently mark OTP used and update last login timestamp
+        _, previous_login = await asyncio.gather(
+            repository.mark_email_otp_used(str(otp_row["id"])),
+            repository.update_last_login(user_id),
+        )
+    else:
+        user = await repository.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found.")
+        if not pyotp.TOTP(user["totp_secret"]).verify(body.code, valid_window=1):
+            asyncio.create_task(repository.log_activity("verify_failed_bad_code", user_id=user_id, email=claims.get("email"), detail="Invalid authenticator code", ip_address=ip, user_agent=ua))
+            raise HTTPException(status_code=401, detail="Invalid authenticator code.")
+        previous_login = await repository.update_last_login(user_id)
+
+    # Activity log is write-only audit trail — execute non-blocking in background
+    asyncio.create_task(repository.log_activity("login_success", user_id=str(user["id"]), email=user["email"], detail=f"Previous login: {previous_login or 'first login'}", ip_address=ip, user_agent=ua))
 
     access = _token({"sub": str(user["id"]), "email": user["email"], "role": user["role"]}, settings.jwt_expire_minutes)
     response.set_cookie("access_token", access, httponly=True, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
-    # Non-HttpOnly flags so frontend JS can detect the logged-in state and role
     response.set_cookie("logged_in", "1", httponly=False, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
     response.set_cookie("user_role", str(user["role"]), httponly=False, secure=settings.cookie_secure, samesite="lax", max_age=settings.jwt_expire_minutes * 60)
     return TokenResponse(access_token=access, role=user["role"], last_login_at=previous_login)

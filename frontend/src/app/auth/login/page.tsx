@@ -26,13 +26,14 @@ export default function LoginPage() {
   const [deletedNotice, setDeletedNotice] = useState(false);
 
   useEffect(() => {
+    router.prefetch("/auth/verify");
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("deleted") === "1") {
         setDeletedNotice(true);
       }
     }
-  }, []);
+  }, [router]);
 
   const registerDisabled = registerMode && (!passwordStrength || !passwordStrength.is_acceptable);
 

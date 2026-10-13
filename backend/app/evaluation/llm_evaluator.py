@@ -30,10 +30,20 @@ def _heuristic_evaluate(resume_text: str, rubric_text: str) -> UnifiedEvaluation
     return UnifiedEvaluationSchema(overall_score=overall, skill_match_score=skill, matching_skills=matching, missing_skills=missing, work_experience_score=experience, verdict_summary=summary)
 
 
+_cached_model = None
+
+
+def _get_gemini_model():
+    global _cached_model
+    if _cached_model is None:
+        import google.generativeai as genai
+        genai.configure(api_key=settings.gemini_api_key)
+        _cached_model = genai.GenerativeModel(settings.gemini_model)
+    return _cached_model
+
+
 async def _gemini_evaluate(resume_text: str, rubric_text: str) -> UnifiedEvaluationSchema:
-    import google.generativeai as genai
-    genai.configure(api_key=settings.gemini_api_key)
-    model = genai.GenerativeModel(settings.gemini_model)
+    model = _get_gemini_model()
     prompt = f"{_SYSTEM_PROMPT}\n\nJOB RUBRIC:\n{rubric_text}\n\nANONYMISED RESUME:\n{resume_text}"
     response = await model.generate_content_async(prompt)
     raw = response.text.strip().removeprefix("```json").removesuffix("```").strip()
