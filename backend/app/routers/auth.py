@@ -36,9 +36,11 @@ from fastapi import Depends
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-# PBKDF2 avoids the passlib/bcrypt 5.x compatibility break and is available in
-# Python's standard hashlib on every deployment target.
-_passwords = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+_passwords = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    pbkdf2_sha256__default_rounds=10000,
+    deprecated="auto",
+)
 
 _USE_EMAIL_OTP: bool = settings.otp_mode.lower() == "email"
 
@@ -373,22 +375,16 @@ async def verify_2fa(body: VerifyRequest, response: Response, request: Request) 
     user_id = claims["sub"]
 
     if _USE_EMAIL_OTP:
-        # Run user and OTP database lookups concurrently to halve query latency
-        user, otp_row = await asyncio.gather(
-            repository.get_user(user_id),
-            repository.get_valid_email_otp(user_id),
-        )
-        if not user:
+        # Atomic single-roundtrip verification: validates OTP, marks it used, and updates last_login_at
+        otp_res = await repository.verify_and_consume_email_otp(user_id, _hash_otp(body.code))
+        if not otp_res:
             raise HTTPException(status_code=401, detail="User not found.")
-        if not otp_row or otp_row["code"] != _hash_otp(body.code):
+        if not otp_res.get("verified"):
             asyncio.create_task(repository.log_activity("verify_failed_bad_code", user_id=user_id, email=claims.get("email"), detail="Invalid or expired email OTP", ip_address=ip, user_agent=ua))
             raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
 
-        # Concurrently mark OTP used and update last login timestamp
-        _, previous_login = await asyncio.gather(
-            repository.mark_email_otp_used(str(otp_row["id"])),
-            repository.update_last_login(user_id),
-        )
+        user = {"id": otp_res["user_id"], "email": otp_res["email"], "role": otp_res["role"]}
+        previous_login = otp_res.get("previous_login")
     else:
         user = await repository.get_user(user_id)
         if not user:

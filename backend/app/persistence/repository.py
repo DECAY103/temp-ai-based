@@ -42,16 +42,19 @@ async def get_user(user_id: str) -> Optional[dict]:
 
 
 async def update_last_login(user_id: str) -> Optional[str]:
-    """Set last_login_at to NOW() and return the *previous* value (for display)."""
+    """Set last_login_at to NOW() and return the *previous* value in a single atomic CTE round-trip."""
     pool = get_pool()
+    query = """
+        WITH prev AS (
+            SELECT last_login_at FROM users WHERE id = $1::uuid
+        )
+        UPDATE users
+        SET last_login_at = NOW()
+        WHERE id = $1::uuid
+        RETURNING (SELECT last_login_at FROM prev) AS previous;
+    """
     async with pool.acquire() as conn:
-        async with conn.transaction():
-            previous = await conn.fetchval(
-                "SELECT last_login_at FROM users WHERE id=$1::uuid", user_id,
-            )
-            await conn.execute(
-                "UPDATE users SET last_login_at=NOW() WHERE id=$1::uuid", user_id,
-            )
+        previous = await conn.fetchval(query, user_id)
     if previous:
         return previous.isoformat()
     return None
@@ -99,19 +102,69 @@ async def delete_user(user_id: str) -> bool:
 # ─── Email OTP ────────────────────────────────────────────────────────────────
 
 async def create_email_otp(user_id: str, code_hash: str, expires_at) -> None:
-    """Invalidate any existing unused codes for the user then store the new one."""
+    """Invalidate any existing unused codes for the user and store the new code in a single atomic database round-trip."""
     pool = get_pool()
+    query = """
+        WITH invalidated AS (
+            UPDATE email_otp_codes
+            SET used = TRUE
+            WHERE user_id = $1::uuid AND used = FALSE
+            RETURNING id
+        )
+        INSERT INTO email_otp_codes (user_id, code, expires_at)
+        VALUES ($1::uuid, $2, $3);
+    """
     async with pool.acquire() as conn:
-        async with conn.transaction():
-            # Invalidate stale codes
-            await conn.execute(
-                "UPDATE email_otp_codes SET used=TRUE WHERE user_id=$1::uuid AND used=FALSE",
-                user_id,
-            )
-            await conn.execute(
-                "INSERT INTO email_otp_codes (user_id,code,expires_at) VALUES ($1::uuid,$2,$3)",
-                user_id, code_hash, expires_at,
-            )
+        await conn.execute(query, user_id, code_hash, expires_at)
+
+
+async def verify_and_consume_email_otp(user_id: str, code_hash: str) -> Optional[dict]:
+    """Verify the OTP, consume it, update last_login_at, and return user details in 1 single atomic round-trip.
+    Returns dict with keys: user_id, email, role, previous_login, verified (bool).
+    Returns None if user does not exist.
+    """
+    pool = get_pool()
+    query = """
+        WITH target_user AS (
+            SELECT id, email, role, last_login_at
+            FROM users
+            WHERE id = $1::uuid
+        ),
+        target_otp AS (
+            SELECT id, code
+            FROM email_otp_codes
+            WHERE user_id = $1::uuid AND used = FALSE AND expires_at > NOW()
+            ORDER BY created_at DESC
+            LIMIT 1
+        ),
+        mark_otp AS (
+            UPDATE email_otp_codes
+            SET used = TRUE
+            WHERE id = (SELECT id FROM target_otp WHERE code = $2)
+            RETURNING id
+        ),
+        upd_user AS (
+            UPDATE users
+            SET last_login_at = NOW()
+            WHERE id = $1::uuid AND EXISTS (SELECT 1 FROM mark_otp)
+            RETURNING id
+        )
+        SELECT 
+            u.id AS user_id,
+            u.email,
+            u.role,
+            u.last_login_at AS previous_login,
+            EXISTS(SELECT 1 FROM mark_otp) AS verified
+        FROM target_user u;
+    """
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(query, user_id, code_hash)
+    if not row:
+        return None
+    res = dict(row)
+    if res.get("previous_login"):
+        res["previous_login"] = res["previous_login"].isoformat()
+    return res
 
 
 async def get_valid_email_otp(user_id: str) -> Optional[dict]:

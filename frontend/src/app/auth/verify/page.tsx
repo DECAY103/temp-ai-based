@@ -40,8 +40,14 @@ function VerifyForm() {
     setLoading(true);
 
     try {
-      const { role: userRole, last_login_at } = await authApi.verify(tempToken, cleanCode);
+      const { access_token, role: userRole, last_login_at } = await authApi.verify(tempToken, cleanCode);
       if (typeof window !== "undefined") {
+        if (access_token) {
+          localStorage.setItem("access_token", access_token);
+          document.cookie = `access_token=${access_token}; path=/; max-age=86400; SameSite=Lax;`;
+          document.cookie = `logged_in=1; path=/; max-age=86400; SameSite=Lax;`;
+          document.cookie = `user_role=${userRole}; path=/; max-age=86400; SameSite=Lax;`;
+        }
         localStorage.setItem("user_role", userRole);
         localStorage.setItem("user_last_login", last_login_at || "first_login");
       }

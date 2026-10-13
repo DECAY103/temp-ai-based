@@ -9,7 +9,15 @@
  * TODO (Person 1): Replace placeholder implementations with real fetch calls.
  */
 
-const BASE = "/api";
+function getBaseUrl(): string {
+  if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_API_URL) {
+    const raw = process.env.NEXT_PUBLIC_API_URL.trim();
+    if (raw && !raw.includes("localhost") && raw.startsWith("http")) {
+      return raw.replace(/\/+$/, "").replace(/\/api$/, "") + "/api";
+    }
+  }
+  return "/api";
+}
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -60,13 +68,20 @@ export interface ProcessingResult {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const base = getBaseUrl();
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, {
+    const headers = new Headers(init?.headers);
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("access_token");
+      if (storedToken && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${storedToken}`);
+      }
+    }
+
+    res = await fetch(`${base}${path}`, {
       credentials: "include",
-      headers: {
-        ...init?.headers,
-      },
+      headers,
       ...init,
     });
   } catch (netErr: unknown) {
@@ -120,9 +135,10 @@ export const healthApi = {
   check: async (timeoutMs = 12000): Promise<HealthStatus> => {
     const start = Date.now();
     try {
+      const base = getBaseUrl();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(`${BASE}/health`, {
+      const res = await fetch(`${base}/health`, {
         cache: "no-store",
         signal: controller.signal,
       });
@@ -291,7 +307,7 @@ export const adminApi = {
       body: JSON.stringify(params || {}),
     }),
 
-  getUserReportUrl: (userId: string) => `${BASE}/admin/users/${userId}/report-pdf`,
+  getUserReportUrl: (userId: string) => `${getBaseUrl()}/admin/users/${userId}/report-pdf`,
 };
 
 // ─── Candidates API (M.1 / M.3) ──────────────────────────────────────────────
