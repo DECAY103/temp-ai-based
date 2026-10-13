@@ -610,7 +610,7 @@ export default function AdminPage() {
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <code style={{ fontWeight: 700, color: "var(--accent, #1D0A69)", fontSize: "0.85rem" }}>
+                        <code style={{ fontWeight: 700, color: "var(--accent, #4729A3)", fontSize: "0.85rem" }}>
                           {log.action}
                         </code>
                         <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>

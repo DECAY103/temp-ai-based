@@ -1,13 +1,24 @@
-/* ─── Design Tokens (Table 1: Functional Colour Palette) ─────────────────── */
+/* ─── Design Tokens (Primary Brand Palette & Functional Colour Palette) ──── */
 :root {
   color-scheme: light;
+
+  /* Primary Brand Palette (Primary Palette: #4729A3, #8B70DB, #BDADEB, #EEEBFA) */
+  --primary-1:            #4729A3; /* Deep Purple (dominant primary brand identity) */
+  --primary-2:            #8B70DB; /* Medium Purple (primary gradient companion) */
+  --primary-3:            #BDADEB; /* Light Pastel Purple (borders, subtle accents) */
+  --primary-4:            #EEEBFA; /* Soft Tint Purple (background highlights, chips) */
+
+  /* Primary Gradients (Using first two colors: #4729A3 and #8B70DB) */
+  --primary-gradient:        linear-gradient(135deg, #4729A3 0%, #8B70DB 100%);
+  --primary-gradient-h:      linear-gradient(90deg, #4729A3 0%, #8B70DB 100%);
+  --primary-gradient-hover:  linear-gradient(135deg, #3A208A 0%, #7A5ECC 100%);
+  --primary-gradient-subtle: linear-gradient(135deg, rgba(71, 41, 163, 0.08) 0%, rgba(139, 112, 219, 0.12) 100%);
 
   /* Functional Brand Palette (Table 1: Functional colour palette) */
   --color-linen:          #EBEAEA; /* Background colour to highlight images, quotes, text elements, outlines to boxes/components */
   --color-inclusive:      #FFFFFF; /* Primary background colour of page, cookie banner, text/icon on dark background */
   --color-earthy-brown:   #150202; /* Text colour over light background such as inclusive white, linen */
   --color-black:          #000000; /* Contrast black */
-  --color-deep-blue:      #1D0A69; /* Deep Blue: key identity colour for root website */
   --color-liberty-green:  #198754; /* Status colour for success */
   --color-mustard-yellow: #FFC107; /* Status colour for warning */
   --color-coral-red:      #DC3545; /* Status colour for error */
@@ -16,7 +27,7 @@
   --color-grey-2:         #8E8E8E; /* Functional grey colour 2: icons, subtle details */
   --color-grey-3:         #606060; /* Functional grey colour 3: subtitles, secondary text */
 
-  /* Semantic UI Tokens mapped strictly to Table 1 */
+  /* Semantic UI Tokens */
   --canvas:        #FFFFFF; /* Inclusive White: primary page background */
   --surface:       #FFFFFF; /* Inclusive White */
   --surface-soft:  #FAFAFA;
@@ -30,11 +41,13 @@
   --line:   #EBEAEA; /* Linen: outlines to boxes, components */
   --line-strong: #C6C6C6; /* Grey 01: functional divider/border */
 
-  /* Primary Interactive / Accent — Deep Blue #1D0A69 */
-  --accent:         #1D0A69; /* Deep Blue: key identity */
-  --accent-hover:   #120546;
-  --accent-soft:    #F0EDFA; /* Soft tint of Deep Blue for badges/highlights */
-  --accent-mid:     #2D1488;
+  /* Primary Interactive / Accent Tokens (Mapped to Primary Palette & Gradient) */
+  --accent:         #4729A3; /* Primary #4729A3 */
+  --accent-hover:   #3A208A;
+  --accent-soft:    #EEEBFA; /* Primary tint #EEEBFA */
+  --accent-mid:     #8B70DB; /* Primary mid #8B70DB */
+  --accent-border:  #BDADEB; /* Primary pastel #BDADEB */
+  --accent-gradient: var(--primary-gradient);
 
   /* Hyperlinks — Blue #0D6EFD per Table 1 */
   --link:           #0D6EFD;
@@ -52,7 +65,7 @@
   --info-soft:   #E7F1FF;
 
   /* Focus Ring */
-  --focus-ring:  0 0 0 3px rgba(29, 10, 105, 0.35);
+  --focus-ring:  0 0 0 3px rgba(71, 41, 163, 0.35);
 
   /* Shadows with Deep Earthy Brown tint */
   --shadow-xs: 0 1px 2px rgba(21, 2, 2, .05);
@@ -222,11 +235,11 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
   width: 26px; height: 26px;
   place-items: center;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-mid));
+  background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
   color: white;
   font-size: .8rem;
   font-weight: 800;
-  box-shadow: 0 2px 6px rgba(29, 10, 105, .35);
+  box-shadow: 0 2px 8px rgba(71, 41, 163, .35);
 }
 .site-nav { display: flex; gap: 18px; color: var(--muted); font-size: .86rem; }
 .site-nav a:hover { color: var(--accent); }
@@ -239,12 +252,12 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
   place-items: center;
   overflow: hidden;
   padding: 72px 24px;
-  background: linear-gradient(160deg, #FFFFFF 0%, #F9F8FC 50%, #F0EEF8 100%);
+  background: linear-gradient(160deg, #FFFFFF 0%, #FAF8FE 45%, var(--primary-4) 100%);
   text-align: center;
 }
 .project-intro::before, .project-intro::after {
   position: absolute;
-  border: 1px solid rgba(29, 10, 105, .08);
+  border: 1px solid rgba(139, 112, 219, .18);
   border-radius: 999px;
   content: "";
   pointer-events: none;
@@ -305,7 +318,7 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(29, 10, 105, .15);
+  box-shadow: 0 0 0 3px rgba(71, 41, 163, .15);
 }
 textarea { min-height: 158px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.5; }
 .file-control { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -341,23 +354,23 @@ textarea { min-height: 158px; resize: vertical; font-family: ui-monospace, SFMon
   min-height: 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--primary-1);
   border-radius: 10px;
   padding: 10px 18px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%);
   color: var(--color-inclusive);
   cursor: pointer;
   font-size: .9rem;
   font-weight: 700;
   white-space: nowrap;
   transition: filter .15s ease, transform .1s ease, box-shadow .15s ease, background .15s ease;
-  box-shadow: 0 2px 8px rgba(29, 10, 105, .25);
+  box-shadow: 0 2px 8px rgba(71, 41, 163, .25);
 }
 .primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: linear-gradient(135deg, #3A208A 0%, #7A5ECC 100%);
+  border-color: #3A208A;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(29, 10, 105, .35);
+  box-shadow: 0 4px 16px rgba(71, 41, 163, .35);
 }
 .primary:active:not(:disabled) { transform: translateY(0); filter: brightness(.97); }
 .primary:disabled { cursor: not-allowed; opacity: .5; }
@@ -405,9 +418,18 @@ textarea { min-height: 158px; resize: vertical; font-family: ui-monospace, SFMon
 .status-card { padding: 24px; }
 .status-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .status-heading h2 { margin: 0; font-size: 1.16rem; }
-.status-chip { border-radius: 999px; padding: 5px 9px; background: var(--accent-soft); color: var(--accent); font-size: .72rem; font-weight: 750; text-transform: capitalize; }
-.progress { height: 6px; overflow: hidden; margin: 11px 0 16px; border-radius: 99px; background: #e2e8f0; }
-.progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-mid)); transition: width .3s ease; }
+.status-chip {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  font-size: .72rem;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+.progress { height: 6px; overflow: hidden; margin: 11px 0 16px; border-radius: 99px; background: var(--color-linen); }
+.progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary-1), var(--primary-2)); transition: width .3s ease; }
 .status-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: .84rem; }
 .status-complete { margin: 20px 0 0; }
 
@@ -469,12 +491,12 @@ tbody tr:hover { background: var(--surface-soft); }
 }
 .auth-orb--1 {
   width: 420px; height: 420px;
-  background: radial-gradient(circle, rgba(29, 10, 105, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(139, 112, 219, 0.22) 0%, transparent 70%);
   top: -120px; right: -80px;
 }
 .auth-orb--2 {
   width: 340px; height: 340px;
-  background: radial-gradient(circle, rgba(45, 20, 136, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(71, 41, 163, 0.16) 0%, transparent 70%);
   bottom: -100px; left: -60px;
 }
 
@@ -549,7 +571,7 @@ tbody tr:hover { background: var(--surface-soft); }
   gap: 10px;
   padding: 12px 14px;
   background: var(--accent-soft);
-  border: 1px solid rgba(29, 10, 105, 0.2);
+  border: 1px solid var(--accent-border);
   border-radius: 10px;
   color: var(--accent);
   font-size: .84rem;
@@ -902,10 +924,10 @@ tr:hover .view-details-link {
 }
 
 .admin-tab-btn--active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%);
   color: #ffffff !important;
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(29, 10, 105, 0.28);
+  border-color: var(--primary-1);
+  box-shadow: 0 2px 8px rgba(71, 41, 163, 0.28);
 }
 
 .admin-reset-btn {
@@ -969,7 +991,7 @@ tr:hover .view-details-link {
 .admin-search-input:focus {
   background: #ffffff;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(29, 10, 105, 0.15);
+  box-shadow: 0 0 0 3px rgba(71, 41, 163, 0.15);
 }
 
 .admin-search-icon {
@@ -1042,7 +1064,7 @@ tr:hover .view-details-link {
 .admin-role-badge--admin {
   background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(29, 10, 105, 0.2);
+  border: 1px solid var(--accent-border);
 }
 
 .admin-role-badge--recruiter {
@@ -1084,12 +1106,13 @@ tr:hover .view-details-link {
 .admin-btn-export {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(29, 10, 105, 0.2);
+  border-color: var(--accent-border);
 }
 
 .admin-btn-export:hover {
-  background: #E4E0F4;
-  color: var(--accent-hover);
+  background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%);
+  color: #FFFFFF;
+  border-color: var(--primary-1);
 }
 
 .admin-empty-state {
@@ -1285,14 +1308,16 @@ tr:hover .view-details-link {
   pointer-events: none;
 }
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%);
   color: #FFFFFF;
-  border-color: var(--accent);
+  border-color: var(--primary-1);
+  box-shadow: 0 2px 8px rgba(71, 41, 163, .25);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: linear-gradient(135deg, #3A208A 0%, #7A5ECC 100%);
+  border-color: #3A208A;
   color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(71, 41, 163, .35);
 }
 .btn-secondary {
   background: var(--color-inclusive);
@@ -1311,6 +1336,7 @@ tr:hover .view-details-link {
 .btn-outline:hover:not(:disabled) {
   background: var(--accent-soft);
   color: var(--accent);
+  border-color: var(--accent-border);
 }
 
 /* ─── Cookie Consent Banner & Modal ─────────────────────────────────────── */
