@@ -83,7 +83,7 @@ export function UploadForm({ role, onSuccess, initialJobId = "" }: UploadFormPro
   return (
     <form className="upload-card form-stack" onSubmit={handleSubmit}>
       <div>
-        <label className="field-label" htmlFor="file-input">{role === "candidate" ? "Résumé PDF" : "Resume archive"}</label>
+        <label className="field-label" htmlFor="file-input">{role === "candidate" ? "Resume PDF" : "Resume archive"}</label>
         <input
         className="file-control"
         id="file-input"
@@ -111,7 +111,7 @@ export function UploadForm({ role, onSuccess, initialJobId = "" }: UploadFormPro
         <div><label className="field-label" htmlFor="rubric-input">Job rubric</label><textarea id="rubric-input" placeholder={'{\n  "title": "Backend Developer",\n  "required_skills": ["Python", "FastAPI", "PostgreSQL"],\n  "minimum_experience_years": 2\n}'} value={rubric} onChange={(e) => setRubric(e.target.value)} required /><p className="field-help">Use valid JSON. The required skills are used for semantic ranking and the final evaluation.</p></div>
       )}
       {error && <p className="message error-message" role="alert">{error}</p>}
-      <div className="upload-actions"><p>{role === "recruiter" ? "Resumes are anonymised before scoring. AI scores are advisory and should be reviewed by a recruiter." : "Your resume is validated and anonymised before it enters the evaluation process."}</p><button className="primary" id="upload-submit" type="submit" disabled={loading || !file}>{loading ? "Uploading…" : role === "recruiter" ? "Start evaluation" : "Submit résumé"}</button></div>
+      <div className="upload-actions"><p>{role === "recruiter" ? "Resumes are anonymised before scoring. AI scores are advisory and should be reviewed by a recruiter." : "Your resume is validated and anonymised before it enters the evaluation process."}</p><button className="primary" id="upload-submit" type="submit" disabled={loading || !file}>{loading ? "Uploading…" : role === "recruiter" ? "Start Evaluation" : "Submit Resume"}</button></div>
     </form>
   );
 }

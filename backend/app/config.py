@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     max_zip_uncompressed_mb: int = 250
     min_similarity_score: float = -1.0
 
+    # Data Retention & Cleanup config (days)
+    resume_retention_days: int = 30
+    upload_retention_days: int = 30
+    activity_log_retention_days: int = 90
+    transfer_log_retention_days: int = 90
+    token_retention_days: int = 7
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

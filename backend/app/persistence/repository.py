@@ -64,11 +64,36 @@ async def update_password(user_id: str, new_password_hash: str) -> None:
 
 
 async def delete_user(user_id: str) -> bool:
-    """Permanently delete a user account. Cascades to OTPs/tokens; sets activity logs user_id to NULL."""
+    """Permanently delete a user account, owned batches, evaluations, and tokens.
+    Anonymises activity and transfer logs so personal identifiers are wiped."""
     pool = get_pool()
     async with pool.acquire() as conn:
-        res = await conn.execute("DELETE FROM users WHERE id=$1::uuid", user_id)
-        return res.endswith("1")
+        async with conn.transaction():
+            user = await conn.fetchrow("SELECT id, email FROM users WHERE id=$1::uuid", user_id)
+            if not user:
+                return False
+            user_email = user["email"]
+
+            # Anonymise audit logs associated with this user
+            await conn.execute(
+                "UPDATE activity_logs SET email='[DELETED_USER]', ip_address=NULL, user_agent=NULL WHERE user_id=$1::uuid OR email=$2",
+                user_id, user_email,
+            )
+            await conn.execute(
+                "UPDATE transfer_audit_logs SET email='[DELETED_USER]', ip_address=NULL, user_agent=NULL WHERE user_id=$1::uuid OR email=$2",
+                user_id, user_email,
+            )
+            # Delete batches owned by this user (cascades to candidate_evaluations)
+            await conn.execute("DELETE FROM batch_jobs WHERE user_id=$1::uuid", user_id)
+            # Delete any candidate evaluations directly linked to this user
+            await conn.execute("DELETE FROM candidate_evaluations WHERE user_id=$1::uuid", user_id)
+            # Invalidate/delete tokens and OTPs
+            await conn.execute("DELETE FROM email_otp_codes WHERE user_id=$1::uuid", user_id)
+            await conn.execute("DELETE FROM password_reset_tokens WHERE user_id=$1::uuid", user_id)
+            await conn.execute("DELETE FROM revoked_tokens WHERE user_id=$1::uuid", user_id)
+            # Delete user record
+            res = await conn.execute("DELETE FROM users WHERE id=$1::uuid", user_id)
+            return res.endswith("1")
 
 
 # ─── Email OTP ────────────────────────────────────────────────────────────────
@@ -168,13 +193,48 @@ async def mark_reset_token_used(token: str) -> None:
         await conn.execute("UPDATE password_reset_tokens SET used=TRUE WHERE token=$1", token)
 
 
-async def create_batch_job(batch_id: str, total_files: int, rubric: Any, upload_bytes: bytes, upload_filename: str, parent_batch_id: str | None = None) -> None:
+async def create_batch_job(
+    batch_id: str,
+    total_files: int,
+    rubric: Any,
+    upload_bytes: bytes,
+    upload_filename: str,
+    parent_batch_id: str | None = None,
+    user_id: str | None = None,
+) -> None:
     pool = get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "INSERT INTO batch_jobs (batch_id,total_files,rubric,upload_bytes,upload_filename,parent_batch_id) VALUES ($1::uuid,$2,$3::jsonb,$4,$5,$6::uuid)",
-            batch_id, total_files, _json(rubric), upload_bytes, upload_filename, parent_batch_id,
+            "INSERT INTO batch_jobs (batch_id,total_files,rubric,upload_bytes,upload_filename,parent_batch_id,user_id) VALUES ($1::uuid,$2,$3::jsonb,$4,$5,$6::uuid,$7::uuid)",
+            batch_id, total_files, _json(rubric), upload_bytes, upload_filename, parent_batch_id, user_id,
         )
+
+
+async def get_batch_metadata(batch_id: str) -> Optional[dict]:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT batch_id, user_id, parent_batch_id, status FROM batch_jobs WHERE batch_id=$1::uuid",
+            batch_id,
+        )
+    return dict(row) if row else None
+
+
+async def get_batch_owner(batch_id: str) -> str | None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        val = await conn.fetchval("SELECT user_id FROM batch_jobs WHERE batch_id=$1::uuid", batch_id)
+        return str(val) if val else None
+
+
+async def get_candidate_evaluation_owner(batch_id: str, candidate_id: str) -> str | None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        val = await conn.fetchval(
+            "SELECT user_id FROM candidate_evaluations WHERE batch_id=$1::uuid AND candidate_id=$2::uuid",
+            batch_id, candidate_id,
+        )
+        return str(val) if val else None
 
 
 async def increment_batch_total_files(batch_id: str) -> None:
@@ -206,7 +266,7 @@ async def get_batch_status(batch_id: str) -> Optional[dict]:
 async def get_batch_context(batch_id: str) -> Optional[dict]:
     pool = get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT batch_id,rubric,upload_bytes,upload_filename,status FROM batch_jobs WHERE batch_id=$1::uuid", batch_id)
+        row = await conn.fetchrow("SELECT batch_id,rubric,upload_bytes,upload_filename,status,user_id FROM batch_jobs WHERE batch_id=$1::uuid", batch_id)
     return dict(row) if row else None
 
 
@@ -217,18 +277,29 @@ async def list_recoverable_batches() -> list[dict]:
     return [dict(row) for row in rows]
 
 
-async def upsert_candidate_evaluation(batch_id: str, candidate_id: str, status: BatchStatus, cosine_score: float = 0.0, evaluation: Optional[UnifiedEvaluationSchema] = None, error_log: Optional[str] = None, filename: str | None = None, resume_bytes: bytes | None = None) -> None:
+async def upsert_candidate_evaluation(
+    batch_id: str,
+    candidate_id: str,
+    status: BatchStatus,
+    cosine_score: float = 0.0,
+    evaluation: Optional[UnifiedEvaluationSchema] = None,
+    error_log: Optional[str] = None,
+    filename: str | None = None,
+    resume_bytes: bytes | None = None,
+    user_id: str | None = None,
+) -> None:
     pool = get_pool()
     payload = json.dumps(evaluation.model_dump()) if evaluation else None
     async with pool.acquire() as conn:
         await conn.execute(
-            """INSERT INTO candidate_evaluations (batch_id,candidate_id,status,cosine_similarity_score,evaluation,error_log,filename,resume_bytes)
-               VALUES ($1::uuid,$2::uuid,$3,$4,$5::jsonb,$6,$7,$8)
+            """INSERT INTO candidate_evaluations (batch_id,candidate_id,status,cosine_similarity_score,evaluation,error_log,filename,resume_bytes,user_id)
+               VALUES ($1::uuid,$2::uuid,$3,$4,$5::jsonb,$6,$7,$8,$9::uuid)
                ON CONFLICT (batch_id,candidate_id) DO UPDATE SET status=EXCLUDED.status,
                cosine_similarity_score=EXCLUDED.cosine_similarity_score,evaluation=COALESCE(EXCLUDED.evaluation,candidate_evaluations.evaluation),
                error_log=EXCLUDED.error_log,filename=COALESCE(EXCLUDED.filename,candidate_evaluations.filename),
-               resume_bytes=COALESCE(EXCLUDED.resume_bytes,candidate_evaluations.resume_bytes)""",
-            batch_id, candidate_id, status.value, cosine_score, payload, error_log, filename, resume_bytes)
+               resume_bytes=COALESCE(EXCLUDED.resume_bytes,candidate_evaluations.resume_bytes),
+               user_id=COALESCE(EXCLUDED.user_id,candidate_evaluations.user_id)""",
+            batch_id, candidate_id, status.value, cosine_score, payload, error_log, filename, resume_bytes, user_id)
 
 
 async def get_batch_results(batch_id: str) -> list[CandidateResult]:
@@ -265,18 +336,29 @@ async def get_candidate_resume_bytes(batch_id: str, candidate_id: str) -> bytes 
     return bytes(value) if value else None
 
 
-async def list_recent_batches(limit: int = 25) -> list[dict]:
+async def list_recent_batches(user_id: str | None = None, is_admin: bool = False, limit: int = 25) -> list[dict]:
     pool = get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """SELECT b.batch_id, b.created_at, b.status, b.total_files, b.rubric, b.upload_filename,
-                      COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) as candidate_count
-               FROM batch_jobs b
-               LEFT JOIN candidate_evaluations c ON c.batch_id = b.batch_id
-               WHERE b.parent_batch_id IS NULL
-               GROUP BY b.batch_id
-               ORDER BY b.created_at DESC
-               LIMIT $1""", limit)
+        if is_admin or user_id is None:
+            rows = await conn.fetch(
+                """SELECT b.batch_id, b.created_at, b.status, b.total_files, b.rubric, b.upload_filename,
+                          COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) as candidate_count
+                   FROM batch_jobs b
+                   LEFT JOIN candidate_evaluations c ON c.batch_id = b.batch_id
+                   WHERE b.parent_batch_id IS NULL
+                   GROUP BY b.batch_id
+                   ORDER BY b.created_at DESC
+                   LIMIT $1""", limit)
+        else:
+            rows = await conn.fetch(
+                """SELECT b.batch_id, b.created_at, b.status, b.total_files, b.rubric, b.upload_filename,
+                          COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) as candidate_count
+                   FROM batch_jobs b
+                   LEFT JOIN candidate_evaluations c ON c.batch_id = b.batch_id
+                   WHERE b.parent_batch_id IS NULL AND b.user_id = $1::uuid
+                   GROUP BY b.batch_id
+                   ORDER BY b.created_at DESC
+                   LIMIT $2""", user_id, limit)
     results = []
     for r in rows:
         rub = r["rubric"] or {}
@@ -292,6 +374,140 @@ async def list_recent_batches(limit: int = 25) -> list[dict]:
             "upload_filename": r["upload_filename"] or "",
         })
     return results
+
+
+# ─── Token Revocation & Invalidation ──────────────────────────────────────────
+
+def _token_hash(token: str) -> str:
+    import hashlib
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+async def revoke_token(token: str, user_id: str, expires_at) -> None:
+    pool = get_pool()
+    th = _token_hash(token)
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """INSERT INTO revoked_tokens (token_hash, user_id, expires_at)
+               VALUES ($1, $2::uuid, $3)
+               ON CONFLICT (token_hash) DO NOTHING""",
+            th, user_id, expires_at,
+        )
+
+
+async def is_token_revoked(token: str) -> bool:
+    pool = get_pool()
+    th = _token_hash(token)
+    async with pool.acquire() as conn:
+        val = await conn.fetchval("SELECT 1 FROM revoked_tokens WHERE token_hash=$1 AND expires_at > NOW()", th)
+        return val is not None
+
+
+async def revoke_all_user_tokens(user_id: str) -> None:
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE users SET tokens_revoked_before=NOW() WHERE id=$1::uuid",
+            user_id,
+        )
+
+
+async def get_user_tokens_revoked_before(user_id: str):
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        return await conn.fetchval("SELECT tokens_revoked_before FROM users WHERE id=$1::uuid", user_id)
+
+
+# ─── Data Retention & Cleanup ────────────────────────────────────────────────
+
+async def purge_expired_data(
+    resume_retention_days: int = 30,
+    upload_retention_days: int = 30,
+    token_retention_days: int = 7,
+    log_retention_days: int = 90,
+) -> dict[str, int]:
+    """Configurable data-retention and cleanup mechanism.
+    - Removes expired original resumes from candidate_evaluations.
+    - Removes expired upload archives from batch_jobs.
+    - Preserves data required by active processing ('queued', 'extracting', 'scoring') and fault recovery.
+    - Purges expired OTPs, reset tokens, and revoked token records.
+    - Repeatable and safe to run multiple times."""
+    pool = get_pool()
+    stats = {
+        "purged_upload_bytes_batches": 0,
+        "purged_candidate_resume_bytes": 0,
+        "deleted_expired_otps": 0,
+        "deleted_expired_reset_tokens": 0,
+        "deleted_expired_revocations": 0,
+    }
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # 1. Nullify upload_bytes on completed/failed batches older than upload_retention_days
+            # Active batches ('queued', 'extracting', 'scoring') are strictly preserved for recovery!
+            res1 = await conn.execute(
+                """UPDATE batch_jobs
+                   SET upload_bytes = NULL
+                   WHERE status IN ('completed', 'failed')
+                     AND upload_bytes IS NOT NULL
+                     AND created_at < NOW() - ($1 || ' days')::INTERVAL""",
+                str(upload_retention_days),
+            )
+            if res1:
+                try:
+                    stats["purged_upload_bytes_batches"] = int(res1.split()[-1])
+                except (ValueError, IndexError):
+                    pass
+
+            # 2. Nullify candidate resume_bytes on finished evaluations older than resume_retention_days
+            res2 = await conn.execute(
+                """UPDATE candidate_evaluations
+                   SET resume_bytes = NULL
+                   WHERE status IN ('completed', 'pre_filtered', 'failed')
+                     AND resume_bytes IS NOT NULL
+                     AND created_at < NOW() - ($1 || ' days')::INTERVAL""",
+                str(resume_retention_days),
+            )
+            if res2:
+                try:
+                    stats["purged_candidate_resume_bytes"] = int(res2.split()[-1])
+                except (ValueError, IndexError):
+                    pass
+
+            # 3. Clean up expired / used OTP codes older than token_retention_days
+            res3 = await conn.execute(
+                """DELETE FROM email_otp_codes
+                   WHERE (used = TRUE OR expires_at < NOW())
+                     AND created_at < NOW() - ($1 || ' days')::INTERVAL""",
+                str(token_retention_days),
+            )
+            if res3:
+                try:
+                    stats["deleted_expired_otps"] = int(res3.split()[-1])
+                except (ValueError, IndexError):
+                    pass
+
+            # 4. Clean up expired / used password reset tokens older than token_retention_days
+            res4 = await conn.execute(
+                """DELETE FROM password_reset_tokens
+                   WHERE (used = TRUE OR expires_at < NOW())
+                     AND created_at < NOW() - ($1 || ' days')::INTERVAL""",
+                str(token_retention_days),
+            )
+            if res4:
+                try:
+                    stats["deleted_expired_reset_tokens"] = int(res4.split()[-1])
+                except (ValueError, IndexError):
+                    pass
+
+            # 5. Clean up expired revoked tokens whose token expiry has already elapsed
+            res5 = await conn.execute("DELETE FROM revoked_tokens WHERE expires_at < NOW()")
+            if res5:
+                try:
+                    stats["deleted_expired_revocations"] = int(res5.split()[-1])
+                except (ValueError, IndexError):
+                    pass
+
+    return stats
 
 
 async def log_transfer(

@@ -19,7 +19,7 @@ async def upload_resume(background_tasks: BackgroundTasks, file: UploadFile = Fi
     if not job: raise HTTPException(404, "Job rubric batch not found.")
     batch_id = str(uuid.uuid4())
     name = file.filename or "resume.pdf"
-    await repository.create_batch_job(batch_id, 1, job["rubric"], data, name, parent_batch_id=job_id)
+    await repository.create_batch_job(batch_id, 1, job["rubric"], data, name, parent_batch_id=job_id, user_id=user.user_id)
     background_tasks.add_task(run_batch, batch_id, data, name, job["rubric"], parent_batch_id=job_id)
 
     # Audit & transfer logging

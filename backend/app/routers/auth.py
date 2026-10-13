@@ -43,7 +43,8 @@ _USE_EMAIL_OTP: bool = settings.otp_mode.lower() == "email"
 
 
 def _token(claims: dict, minutes: int) -> str:
-    return jwt.encode({**claims, "exp": datetime.now(timezone.utc) + timedelta(minutes=minutes)}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    now = datetime.now(timezone.utc)
+    return jwt.encode({**claims, "iat": int(now.timestamp()), "exp": now + timedelta(minutes=minutes)}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
 def _client_info(request: Request) -> tuple[str | None, str | None]:
@@ -156,7 +157,7 @@ async def _send_via_gmail(to_email: str, subject: str, body_text: str, body_html
 def _smtp_send_sync(to_email: str, subject: str, body_text: str, body_html: str | None = None) -> None:
     """Synchronous SMTP fallback. Runs inside an asyncio thread pool."""
     if not settings.smtp_host:
-        logger.warning("[SMTP] Host not configured. Code/message for %s: %s", to_email, body_text)
+        logger.warning("[SMTP] Host not configured. Email delivery to %s skipped.", to_email)
         return
     msg = MIMEMultipart("alternative") if body_html else MIMEText(body_text, "plain")
     msg["Subject"] = subject
@@ -189,7 +190,7 @@ async def _send_email(to_email: str, subject: str, body_text: str, body_html: st
     """Unified email dispatcher:
     1. Uses Gmail HTTPS API if Gmail OAuth2 credentials are configured (recommended).
     2. Falls back to SMTP if SMTP_HOST is configured.
-    3. Otherwise logs to console (local dev mode).
+    3. Otherwise logs notice (local dev mode).
     """
     if _is_gmail_configured():
         await _send_via_gmail(to_email, subject, body_text, body_html)
@@ -200,7 +201,7 @@ async def _send_email(to_email: str, subject: str, body_text: str, body_html: st
         await asyncio.to_thread(_smtp_send_sync, to_email, subject, body_text, body_html)
         return
 
-    logger.warning("[Email] Neither Gmail nor SMTP configured. Code/link for %s:\n%s", to_email, body_text)
+    logger.warning("[Email] Neither Gmail nor SMTP configured. Email delivery skipped for %s.", to_email)
 
 
 async def _send_otp_email(to_email: str, code: str) -> None:
@@ -246,7 +247,7 @@ async def _send_reset_email(to_email: str, reset_url: str) -> None:
       </p>
     </div>
     """
-    logger.info("[Password Reset] Reset link for %s: %s", to_email, reset_url)
+    logger.info("[Password Reset] Password reset link issued for %s", to_email)
     await _send_email(to_email, "Password Reset — Resume Screening", plain, html)
 
 
@@ -313,8 +314,8 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.smtp_otp_expire_minutes)
         await repository.create_email_otp(str(user["id"]), _hash_otp(plain_code), expires_at)
 
-        # Always log the OTP in server logs so it is visible in Render logs even if SMTP fails
-        logger.info("[2FA OTP] Generated code for %s: %s (expires in %sm)", user["email"], plain_code, settings.smtp_otp_expire_minutes)
+        # Log code generation event without leaking raw OTP value
+        logger.info("[2FA OTP] Generated verification code for %s (expires in %sm)", user["email"], settings.smtp_otp_expire_minutes)
 
         try:
             await asyncio.wait_for(_send_otp_email(user["email"], plain_code), timeout=8.0)
@@ -441,6 +442,35 @@ async def get_activity_logs(user: CurrentUser = Depends(current_user)) -> Activi
     return ActivityLogsResponse(logs=entries)
 
 
+# ─── Logout ──────────────────────────────────────────────────────────────────
+
+@router.post("/logout")
+async def logout(
+    response: Response,
+    request: Request,
+    user: CurrentUser = Depends(current_user),
+) -> dict:
+    """Invalidate current session and clear auth cookies."""
+    ip, ua = _client_info(request)
+    if user.token:
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
+        await repository.revoke_token(user.token, user.user_id, expires_at)
+
+    await repository.log_activity(
+        "logout_success",
+        user_id=user.user_id,
+        email=user.email,
+        detail="User logged out successfully",
+        ip_address=ip,
+        user_agent=ua,
+    )
+
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("logged_in", path="/")
+    response.delete_cookie("user_role", path="/")
+    return {"message": "Successfully logged out."}
+
+
 # ─── Delete Account ──────────────────────────────────────────────────────────
 
 @router.delete("/account")
@@ -451,6 +481,11 @@ async def delete_account(
 ) -> dict:
     """Permanently delete the authenticated user's account and clear auth cookies."""
     ip, ua = _client_info(request)
+    if user.token:
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
+        await repository.revoke_token(user.token, user.user_id, expires_at)
+    await repository.revoke_all_user_tokens(user.user_id)
+
     success = await repository.delete_user(user.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="User account not found.")
@@ -458,7 +493,7 @@ async def delete_account(
     await repository.log_activity(
         "account_deleted",
         user_id=None,
-        email=user.email,
+        email="[DELETED_USER]",
         detail=f"Self-service account deletion (role: {user.role.value})",
         ip_address=ip,
         user_agent=ua,

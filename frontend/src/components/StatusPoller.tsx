@@ -35,22 +35,51 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setInterval> | undefined;
+
     const poll = async () => {
       try {
         const data = await jobsApi.getStatus(batchId);
         if (!active) return;
         setStatus(data);
-        if (data.status === "completed" || data.status === "failed") clearInterval(timer);
-      } catch (err) { if (active) setError(err instanceof Error ? err.message : "Could not fetch status."); }
+        if (data.status === "completed" || data.status === "failed") {
+          if (timer) clearInterval(timer);
+        }
+      } catch (err) {
+        if (active) setError(err instanceof Error ? err.message : "Could not fetch status.");
+      }
     };
+
     void poll();
     timer = setInterval(poll, 2500);
-    return () => { active = false; clearInterval(timer); };
+
+    const handleVisibilityChange = () => {
+      if (!active) return;
+      if (document.hidden) {
+        if (timer) clearInterval(timer);
+      } else {
+        void poll();
+        if (timer) clearInterval(timer);
+        timer = setInterval(poll, 2500);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [batchId]);
 
   if (error) return <p className="message error-message" role="alert">{error}</p>;
-  if (!status) return <section className="status-card"><p className="eyebrow">Processing</p><h2>Preparing your files…</h2><p className="field-help">This page updates automatically.</p></section>;
-
+  if (!status) return (
+    <section className="status-card" aria-busy="true">
+      <p className="eyebrow">Processing</p>
+      <h2>Preparing your files…</h2>
+      <p className="field-help">This page updates automatically.</p>
+    </section>
+  );
 
   function copyBatchId() {
     navigator.clipboard.writeText(batchId);
@@ -60,7 +89,20 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
 
   return (
     <div className="status-card">
-      <div className="status-heading"><div><p className="eyebrow">Batch processing</p><h2>{status.status === "completed" ? "Processing complete" : "Processing resumes"}</h2></div><span className="status-chip">{status.status}</span></div>
+      {/* Screen-reader live announcement for dynamic updates */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {status.status === "completed"
+          ? "Processing complete. All resumes evaluated."
+          : `Processing resumes. ${status.processed_files} of ${status.total_files} processed, ${status.progress_percentage.toFixed(0)}% complete.`}
+      </div>
+
+      <div className="status-heading">
+        <div>
+          <p className="eyebrow">Batch processing</p>
+          <h2>{status.status === "completed" ? "Processing complete" : "Processing resumes"}</h2>
+        </div>
+        <span className="status-chip">{status.status}</span>
+      </div>
 
       <div style={{ background: "var(--surface-soft, #f8fafc)", padding: "10px 14px", borderRadius: "8px", margin: "14px 0", border: "1px solid var(--line, #e2e8f0)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ minWidth: 0 }}>
@@ -74,13 +116,23 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
           className="ghost"
           style={{ fontSize: "0.78rem", padding: "5px 10px", whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={copyBatchId}
+          aria-label="Copy Batch ID to clipboard"
         >
           {copied ? "Copied! ✓" : "Copy ID"}
         </button>
       </div>
 
       <p className="field-help">{status.progress_percentage.toFixed(0)}% complete</p>
-      <div className="progress"><span style={{ width: `${status.progress_percentage}%` }} /></div>
+      <div
+        className="progress"
+        role="progressbar"
+        aria-valuenow={Math.round(status.progress_percentage)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Batch processing progress"
+      >
+        <span style={{ width: `${status.progress_percentage}%` }} />
+      </div>
       <div className="status-meta">
         <span>{status.processed_files} of {status.total_files} processed</span>
         {status.failed_files > 0 && <span style={{ color: "#dc2626", fontWeight: 600 }}>{status.failed_files} failed</span>}

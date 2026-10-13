@@ -15,7 +15,8 @@ router = APIRouter()
 
 @router.get("", response_model=list[dict])
 async def list_jobs(user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> list[dict]:
-    return await repository.list_recent_batches(limit=25)
+    is_admin = (user.role == UserRole.admin)
+    return await repository.list_recent_batches(user_id=user.user_id, is_admin=is_admin, limit=25)
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubric: str = Form(...), user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> UploadResponse:
@@ -29,7 +30,7 @@ async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = Fil
     except ValidationError as exc:
         raise HTTPException(400, str(exc)) from exc
     batch_id = str(uuid.uuid4())
-    await repository.create_batch_job(batch_id, len(names), parsed_rubric, data, file.filename or "resumes.zip")
+    await repository.create_batch_job(batch_id, len(names), parsed_rubric, data, file.filename or "resumes.zip", user_id=user.user_id)
     background_tasks.add_task(run_batch, batch_id, data, file.filename or "resumes.zip", parsed_rubric)
 
     # Audit & transfer logging
@@ -52,8 +53,31 @@ async def upload_batch(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
     return UploadResponse(batch_id=batch_id, status_url=f"/api/jobs/{batch_id}/status")
 
+async def _verify_batch_access(batch_id: str, user: CurrentUser, allow_candidate_parent: bool = False) -> dict:
+    """Helper to verify caller owns the batch or has admin privileges."""
+    meta = await repository.get_batch_metadata(batch_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Batch not found.")
+
+    if user.role == UserRole.admin:
+        return meta
+
+    # Check direct ownership
+    if meta.get("user_id") and meta.get("user_id") == user.user_id:
+        return meta
+
+    # For recruiters, check if this is a candidate submission under a job batch they own
+    parent_id = meta.get("parent_batch_id")
+    if parent_id and user.role == UserRole.recruiter:
+        parent_meta = await repository.get_batch_metadata(str(parent_id))
+        if parent_meta and parent_meta.get("user_id") == user.user_id:
+            return meta
+
+    raise HTTPException(status_code=403, detail="Access denied: you do not have permission to access this batch.")
+
 @router.get("/{batch_id}/status", response_model=BatchStatusResponse)
 async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin, UserRole.candidate))) -> BatchStatusResponse:
+    await _verify_batch_access(batch_id, user)
     row = await repository.get_batch_status(batch_id)
     if not row: raise HTTPException(404, "Batch not found.")
     total = int(row["total_files"])
@@ -76,6 +100,7 @@ async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_ro
 
 @router.get("/{batch_id}/results", response_model=BatchResultsResponse)
 async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> BatchResultsResponse:
+    await _verify_batch_access(batch_id, user)
     row = await repository.get_batch_status(batch_id)
     if not row: raise HTTPException(404, "Batch not found.")
     if row["status"] not in {BatchStatus.completed.value, BatchStatus.failed.value}: raise HTTPException(409, "Batch is still processing.")
@@ -83,7 +108,26 @@ async def get_batch_results(batch_id: str, user: CurrentUser = Depends(require_r
     return BatchResultsResponse(batch_id=batch_id, results=await repository.get_batch_results(batch_id))
 
 @router.get("/{batch_id}/candidates/{candidate_id}/resume")
-async def download_original_resume(batch_id: str, candidate_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin))) -> Response:
+async def download_original_resume(batch_id: str, candidate_id: str, user: CurrentUser = Depends(require_roles(UserRole.recruiter, UserRole.admin, UserRole.candidate))) -> Response:
+    meta = await repository.get_batch_metadata(batch_id)
+    if not meta:
+        raise HTTPException(404, "Batch not found.")
+
+    if user.role != UserRole.admin:
+        if user.role == UserRole.candidate:
+            eval_owner = await repository.get_candidate_evaluation_owner(batch_id, candidate_id)
+            if meta.get("user_id") != user.user_id and eval_owner != user.user_id:
+                raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
+        elif user.role == UserRole.recruiter:
+            if meta.get("user_id") != user.user_id:
+                parent_id = meta.get("parent_batch_id")
+                if parent_id:
+                    parent_meta = await repository.get_batch_metadata(str(parent_id))
+                    if not parent_meta or parent_meta.get("user_id") != user.user_id:
+                        raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
+                else:
+                    raise HTTPException(403, "Access denied: you do not have permission to download this resume.")
+
     filename = await repository.get_candidate_filename(batch_id, candidate_id)
     raw_bytes = await repository.get_candidate_resume_bytes(batch_id, candidate_id)
     if raw_bytes and filename:
@@ -92,6 +136,8 @@ async def download_original_resume(batch_id: str, candidate_id: str, user: Curre
         return Response(raw_bytes, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
     context = await repository.get_batch_context(batch_id)
     if not context or not filename: raise HTTPException(404, "Original resume not found.")
+    if not context.get("upload_bytes"):
+        raise HTTPException(410, "Original resume upload has expired and been removed per data retention policy.")
     if (context["upload_filename"] or "").lower().endswith(".zip"):
         with zipfile.ZipFile(io.BytesIO(context["upload_bytes"])) as archive:
             content = archive.read(filename)

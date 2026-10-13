@@ -1,6 +1,13 @@
 """
-forensic_report.py — Generates official forensic enquiry audit report PDFs for administrators.
-Uses pymupdf for instant, high-fidelity PDF generation without external binaries.
+forensic_report.py — Generates forensic enquiry audit report PDFs for administrators.
+Uses pymupdf with accessible typography, standardised brand palette, and document metadata.
+
+Accessibility Note:
+  This generator sets document metadata (Title, Author, Subject, Keywords, Creator)
+  and follows high-contrast layout principles (WCAG AAA contrast ratios using
+  Deep Earthy Brown on Linen/White). Full PDF/UA semantic tagging (/StructTreeRoot)
+  is an architectural limitation of canvas-drawn PyMuPDF documents and requires
+  external tag-tree compilers for formal PDF/UA-1 certification.
 """
 from __future__ import annotations
 
@@ -15,16 +22,39 @@ def generate_forensic_report(
     admin_email: str = "administrator",
 ) -> bytes:
     doc = pymupdf.open()
+
+    # Set document metadata for assistive technologies
+    doc.set_metadata({
+        "title": "Forensic Enquiry Audit Report",
+        "author": f"Resume Screening Platform (Auditor: {admin_email})",
+        "subject": f"Forensic Security Audit Trail for User {user.get('email', 'Unknown')}",
+        "creator": "Resume Screening Platform PDF Engine",
+        "producer": "PyMuPDF Accessible Forensic Engine",
+        "keywords": "audit, forensic, security, resume screening, compliance",
+    })
+    if hasattr(doc, "set_language"):
+        try:
+            doc.set_language("en-GB")
+        except Exception:
+            pass
+
     page = doc.new_page(width=595, height=842)  # A4 standard
 
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # Colors
-    c_brand = (0.2, 0.25, 0.8)       # Indigo
-    c_dark = (0.06, 0.09, 0.16)      # Slate dark
-    c_muted = (0.4, 0.45, 0.53)      # Slate muted
-    c_line = (0.88, 0.91, 0.94)      # Slate border
-    c_bg_box = (0.97, 0.98, 0.99)    # Light gray
+    # Standardised Brand & Accessibility Palette (Digital Brand Identity Manual)
+    # Purple 2 (#4729A3) - Primary Accent
+    c_brand = (0.278, 0.161, 0.639)
+    # Deep Earthy Brown (#150202) - Body text (AAA contrast on white & linen)
+    c_dark = (0.082, 0.008, 0.008)
+    # Grey 03 (#606060) - Muted labels
+    c_muted = (0.376, 0.376, 0.376)
+    # Grey 01 (#C6C6C6) - Dividers & borders
+    c_line = (0.776, 0.776, 0.776)
+    # Linen (#EBEAEA) - Highlight box background
+    c_bg_box = (0.922, 0.918, 0.918)
+    # Inclusive (#FFFFFF) - White
+    c_white = (1.0, 1.0, 1.0)
 
     # Header Bar
     page.draw_rect(pymupdf.Rect(40, 40, 555, 42), fill=c_brand, color=c_brand)

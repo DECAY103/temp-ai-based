@@ -246,6 +246,11 @@ export const authApi = {
   getActivityLogs: () =>
     request<{ logs: ActivityLogEntry[] }>("/auth/activity-logs"),
 
+  logout: () =>
+    request<{ message: string }>("/auth/logout", {
+      method: "POST",
+    }),
+
   deleteAccount: () =>
     request<{ message: string }>("/auth/account", {
       method: "DELETE",
@@ -277,6 +282,13 @@ export const adminApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ confirmation }),
+    }),
+
+  triggerRetentionCleanup: (params?: { resume_retention_days?: number; upload_retention_days?: number; token_retention_days?: number }) =>
+    request<{ status: string; message: string; stats: Record<string, number> }>("/admin/retention/cleanup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params || {}),
     }),
 
   getUserReportUrl: (userId: string) => `${BASE}/admin/users/${userId}/report-pdf`,

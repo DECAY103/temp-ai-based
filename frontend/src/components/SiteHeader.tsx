@@ -30,7 +30,24 @@ export function SiteHeader() {
     setRole(userRole);
   }, [pathname]);
 
-  const handleSignOut = () => {
+  // Keyboard dismissal for delete account dialog
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDeleting) {
+        setShowDeleteModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showDeleteModal, isDeleting]);
+
+  const handleSignOut = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Proceed with client cleanup regardless
+    }
     document.cookie = "logged_in=; Max-Age=0; path=/";
     document.cookie = "user_role=; Max-Age=0; path=/";
     if (typeof window !== "undefined") {
@@ -140,6 +157,9 @@ export function SiteHeader() {
       {showDeleteModal && (
         <div
           className="admin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-account-modal-title"
           onClick={() => !isDeleting && setShowDeleteModal(false)}
         >
           <div
@@ -149,12 +169,13 @@ export function SiteHeader() {
           >
             <div className="admin-modal-header" style={{ borderBottomColor: "#fee2e2" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>⚠️</span>
-                <h2 style={{ color: "#b91c1c" }}>Delete Account</h2>
+                <span aria-hidden="true" style={{ fontSize: "1.2rem" }}>⚠️</span>
+                <h2 id="delete-account-modal-title" style={{ color: "#b91c1c" }}>Delete Account</h2>
               </div>
               <button
                 type="button"
                 className="admin-modal-close"
+                aria-label="Close delete account dialog"
                 disabled={isDeleting}
                 onClick={() => setShowDeleteModal(false)}
               >
@@ -172,6 +193,7 @@ export function SiteHeader() {
               </p>
               {deleteError && (
                 <div
+                  role="alert"
                   style={{
                     marginTop: 14,
                     padding: "8px 12px",
@@ -202,7 +224,7 @@ export function SiteHeader() {
                 disabled={isDeleting}
                 onClick={handleDeleteAccount}
               >
-                {isDeleting ? "Deleting..." : "Permanently Delete Account"}
+                {isDeleting ? "Deleting..." : "Delete Account"}
               </button>
             </div>
           </div>

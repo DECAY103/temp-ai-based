@@ -171,3 +171,45 @@ async def admin_delete_user(
         "message": f"User {target_user.get('email')} successfully deleted.",
     }
 
+
+class RetentionCleanupRequest(BaseModel):
+    resume_retention_days: int | None = None
+    upload_retention_days: int | None = None
+    token_retention_days: int | None = None
+    log_retention_days: int | None = None
+
+
+@router.post("/retention/cleanup")
+async def trigger_retention_cleanup(
+    request: Request,
+    body: RetentionCleanupRequest | None = None,
+    user: CurrentUser = Depends(require_roles(UserRole.admin)),
+) -> dict:
+    """Trigger configurable data-retention cleanup of expired resumes, archives, and tokens."""
+    from app.persistence.cleanup import run_retention_cleanup
+
+    req = body or RetentionCleanupRequest()
+    stats = await run_retention_cleanup(
+        resume_retention_days=req.resume_retention_days,
+        upload_retention_days=req.upload_retention_days,
+        token_retention_days=req.token_retention_days,
+        log_retention_days=req.log_retention_days,
+    )
+
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("user-agent", "")
+    await repository.log_activity(
+        "retention_cleanup_executed",
+        user_id=user.user_id,
+        email=user.email,
+        detail=f"Retention cleanup executed: {stats}",
+        ip_address=ip,
+        user_agent=ua,
+    )
+    return {
+        "status": "success",
+        "message": "Data-retention cleanup completed successfully.",
+        "stats": stats,
+    }
+
+
