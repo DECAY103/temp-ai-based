@@ -29,7 +29,6 @@ export default function Home() {
           Open screening portal
         </a>
       </section>
-      <p className="project-intro__footer">© 2026 AI-based Resume Screening. All rights reserved.</p>
     </main>
   );
 }

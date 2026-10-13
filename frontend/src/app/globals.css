@@ -264,9 +264,9 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
 .contributors h2 { margin: 0 0 13px; color: var(--accent); font-size: 1rem; letter-spacing: -.02em; }
 .contributors ul { display: grid; gap: 8px; margin: 0; padding: 0; color: #334155; font-size: .96rem; line-height: 1.45; list-style: none; }
 .contributors span { color: var(--muted); }
-.course-instructor { margin-top: 28px; }
-.course-instructor h2 { margin: 0 0 8px; color: var(--accent); font-size: 1rem; letter-spacing: -.02em; }
-.course-instructor p { margin: 0; color: #334155; font-size: .96rem; }
+.course-instructor { margin-top: 28px; text-align: center; }
+.course-instructor h2 { margin: 0 0 8px; color: var(--accent); font-size: 1rem; letter-spacing: -.02em; text-align: center; }
+.course-instructor p { margin: 0; color: #334155; font-size: .96rem; text-align: center; }
 .project-intro__cta { width: auto; margin-top: 32px; padding: 11px 18px; }
 .project-intro__footer { position: absolute; z-index: 1; bottom: 22px; left: 24px; margin: 0; color: var(--subtle); font-size: .76rem; }
 
