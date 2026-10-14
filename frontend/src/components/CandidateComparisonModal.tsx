@@ -101,7 +101,7 @@ export function CandidateComparisonModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(21, 2, 2, 0.70)",
+        background: "rgba(41, 19, 108, 0.45)",
         backdropFilter: "blur(4px)",
         zIndex: 1000,
         display: "flex",
@@ -127,7 +127,7 @@ export function CandidateComparisonModal({
                 margin: "0 0 6px",
                 fontSize: "1.55rem",
                 fontWeight: 700,
-                color: "var(--ink, #150202)",
+                color: "var(--ink, #29136C)",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -137,7 +137,7 @@ export function CandidateComparisonModal({
               style={{
                 margin: 0,
                 fontSize: "0.95rem",
-                color: "var(--muted, #606060)",
+                color: "var(--muted, #4729A3)",
                 lineHeight: 1.5,
               }}
             >
@@ -154,14 +154,14 @@ export function CandidateComparisonModal({
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              background: "var(--surface-soft, #FAFAFA)",
-              border: "1px solid var(--color-grey-1, #C6C6C6)",
+              background: "var(--surface-soft, #EEEBFA)",
+              border: "1px solid var(--color-grey-1, #BDADEB)",
               borderRadius: "8px",
               padding: "9px 16px",
               cursor: "pointer",
               fontWeight: 650,
               fontSize: "0.9rem",
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -183,8 +183,8 @@ export function CandidateComparisonModal({
               <div
                 key={c.candidate_id}
                 style={{
-                  background: isLeader ? "var(--accent-soft, #EEEBFA)" : "var(--surface-soft, #FAFAFA)",
-                  border: isLeader ? "1.5px solid var(--primary-1, #4729A3)" : "1px solid var(--color-grey-1, #C6C6C6)",
+                  background: isLeader ? "var(--accent-soft, #EEEBFA)" : "var(--surface-soft, #EEEBFA)",
+                  border: isLeader ? "1.5px solid var(--primary-1, #4729A3)" : "1px solid var(--color-grey-1, #BDADEB)",
                   borderRadius: "12px",
                   padding: "22px 24px",
                   position: "relative",
@@ -214,7 +214,7 @@ export function CandidateComparisonModal({
                 )}
 
                 <div>
-                  <div style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <div style={{ fontSize: "0.85rem", color: "var(--muted, #4729A3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Candidate {i + 1}
                   </div>
                   <h3
@@ -222,7 +222,7 @@ export function CandidateComparisonModal({
                       margin: "6px 0 12px",
                       fontSize: "1.15rem",
                       fontWeight: 700,
-                      color: "var(--ink, #150202)",
+                      color: "var(--ink, #29136C)",
                       wordBreak: "break-all",
                     }}
                   >
@@ -240,7 +240,7 @@ export function CandidateComparisonModal({
                     >
                       {c.overall_score.toFixed(1)}
                     </span>
-                    <span style={{ fontSize: "0.92rem", color: "var(--muted, #606060)", fontWeight: 500 }}>
+                    <span style={{ fontSize: "0.92rem", color: "var(--muted, #4729A3)", fontWeight: 500 }}>
                       / 100 overall
                     </span>
                   </div>
@@ -260,8 +260,8 @@ export function CandidateComparisonModal({
                     padding: "9px 14px",
                     borderRadius: "8px",
                     background: "var(--surface, #FFFFFF)",
-                    border: "1px solid var(--color-grey-1, #C6C6C6)",
-                    color: "var(--ink, #150202)",
+                    border: "1px solid var(--color-grey-1, #BDADEB)",
+                    color: "var(--ink, #29136C)",
                     textDecoration: "none",
                     fontWeight: 650,
                   }}
@@ -282,8 +282,8 @@ export function CandidateComparisonModal({
         {/* Pillar Benchmark Section */}
         <div
           style={{
-            background: "var(--surface-soft, #FAFAFA)",
-            border: "1px solid var(--color-linen, #EBEAEA)",
+            background: "var(--surface-soft, #EEEBFA)",
+            border: "1px solid var(--color-linen, #BDADEB)",
             borderRadius: "12px",
             padding: "24px 28px",
             marginBottom: "32px",
@@ -294,7 +294,7 @@ export function CandidateComparisonModal({
               margin: "0 0 20px",
               fontSize: "1.05rem",
               fontWeight: 700,
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
             }}
           >
             Pillar-by-Pillar Benchmark
@@ -303,8 +303,8 @@ export function CandidateComparisonModal({
           {/* Skill Match */}
           <div style={{ marginBottom: "22px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Skill Match</span>
-              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Rubric Keyword Alignment</span>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Skill Match</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #4729A3)" }}>Rubric Keyword Alignment</span>
             </div>
             <div
               className="comparison-grid"
@@ -313,12 +313,12 @@ export function CandidateComparisonModal({
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
-                    <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
-                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.skill_match_score === highestSkill ? "var(--color-liberty-green, #198754)" : "inherit" }}>
+                    <span style={{ color: "var(--muted, #4729A3)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.skill_match_score === highestSkill ? "var(--color-liberty-green, #4729A3)" : "inherit" }}>
                       {c.skill_match_score.toFixed(1)}% {c.skill_match_score === highestSkill && "(Leader)"}
                     </strong>
                   </div>
-                  <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{ height: "9px", background: "var(--color-linen, #BDADEB)", borderRadius: "99px", overflow: "hidden" }}>
                     <div
                       style={{
                         width: `${Math.min(100, Math.max(0, c.skill_match_score))}%`,
@@ -336,8 +336,8 @@ export function CandidateComparisonModal({
           {/* Work Experience */}
           <div style={{ marginBottom: "22px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Work Experience</span>
-              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Tenure & Seniority Match</span>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Work Experience</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #4729A3)" }}>Tenure & Seniority Match</span>
             </div>
             <div
               className="comparison-grid"
@@ -346,12 +346,12 @@ export function CandidateComparisonModal({
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
-                    <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
-                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.work_experience_score === highestExp ? "var(--color-liberty-green, #198754)" : "inherit" }}>
+                    <span style={{ color: "var(--muted, #4729A3)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums", color: c.work_experience_score === highestExp ? "var(--color-liberty-green, #4729A3)" : "inherit" }}>
                       {c.work_experience_score.toFixed(1)}% {c.work_experience_score === highestExp && "(Leader)"}
                     </strong>
                   </div>
-                  <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{ height: "9px", background: "var(--color-linen, #BDADEB)", borderRadius: "99px", overflow: "hidden" }}>
                     <div
                       style={{
                         width: `${Math.min(100, Math.max(0, c.work_experience_score))}%`,
@@ -369,8 +369,8 @@ export function CandidateComparisonModal({
           {/* Semantic Cosine Relevance */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Semantic Vector Relevance</span>
-              <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Stage-1 Vector Cosine Similarity</span>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Semantic Vector Relevance</span>
+              <span style={{ fontSize: "0.86rem", color: "var(--muted, #4729A3)" }}>Stage-1 Vector Cosine Similarity</span>
             </div>
             <div
               className="comparison-grid"
@@ -381,12 +381,12 @@ export function CandidateComparisonModal({
                 return (
                   <div key={c.candidate_id}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", marginBottom: "6px" }}>
-                      <span style={{ color: "var(--muted, #606060)", fontWeight: 500 }}>Candidate {i + 1}</span>
+                      <span style={{ color: "var(--muted, #4729A3)", fontWeight: 500 }}>Candidate {i + 1}</span>
                       <strong style={{ fontVariantNumeric: "tabular-nums" }}>
                         {c.cosine_similarity_score.toFixed(3)} ({simPct.toFixed(1)}%)
                       </strong>
                     </div>
-                    <div style={{ height: "9px", background: "var(--color-linen, #EBEAEA)", borderRadius: "99px", overflow: "hidden" }}>
+                    <div style={{ height: "9px", background: "var(--color-linen, #BDADEB)", borderRadius: "99px", overflow: "hidden" }}>
                       <div
                         style={{
                           width: `${Math.min(100, Math.max(0, simPct))}%`,
@@ -424,7 +424,7 @@ export function CandidateComparisonModal({
             >
               Comparative Evaluation Synthesis
             </h4>
-            <ul style={{ margin: "0 0 16px", paddingLeft: "22px", fontSize: "0.94rem", lineHeight: 1.65, color: "var(--ink, #150202)" }}>
+            <ul style={{ margin: "0 0 16px", paddingLeft: "22px", fontSize: "0.94rem", lineHeight: 1.65, color: "var(--ink, #29136C)" }}>
               {tradeOffSummary.points.map((pt, idx) => (
                 <li key={idx} style={{ marginBottom: "6px" }}>
                   {pt}
@@ -434,13 +434,13 @@ export function CandidateComparisonModal({
             <div
               style={{
                 background: "var(--accent-soft, #EEEBFA)",
-                borderLeft: "4px solid var(--primary-1, #4729A3)",
+                border: "1px solid var(--accent-border, #BDADEB)",
                 padding: "14px 18px",
                 borderRadius: "6px",
                 fontSize: "0.93rem",
                 fontWeight: 600,
                 lineHeight: 1.55,
-                color: "var(--ink, #150202)",
+                color: "var(--ink, #29136C)",
               }}
             >
               {tradeOffSummary.recommendation}
@@ -455,7 +455,7 @@ export function CandidateComparisonModal({
               margin: "0 0 18px",
               fontSize: "1.05rem",
               fontWeight: 700,
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
             }}
           >
             Skill Overlap & Differential Matrix
@@ -467,12 +467,12 @@ export function CandidateComparisonModal({
               style={{
                 marginBottom: "20px",
                 padding: "16px 20px",
-                background: "var(--good-soft, #E8F5E9)",
+                background: "var(--good-soft, #EEEBFA)",
                 borderRadius: "10px",
-                border: "1px solid var(--color-liberty-green, #198754)",
+                border: "1px solid var(--color-liberty-green, #4729A3)",
               }}
             >
-              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--color-liberty-green, #198754)", marginBottom: "10px" }}>
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--color-liberty-green, #4729A3)", marginBottom: "10px" }}>
                 Common Competencies (Verified across all selected profiles):
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -481,8 +481,8 @@ export function CandidateComparisonModal({
                     key={sIdx}
                     style={{
                       background: "var(--surface, #FFFFFF)",
-                      color: "var(--color-liberty-green, #198754)",
-                      border: "1px solid var(--color-liberty-green, #198754)",
+                      color: "var(--color-liberty-green, #4729A3)",
+                      border: "1px solid var(--color-liberty-green, #4729A3)",
                       fontSize: "0.85rem",
                       fontWeight: 650,
                       padding: "4px 12px",
@@ -507,8 +507,8 @@ export function CandidateComparisonModal({
                 <div
                   key={c.candidate_id}
                   style={{
-                    background: "var(--surface-soft, #FAFAFA)",
-                    border: "1px solid var(--color-linen, #EBEAEA)",
+                    background: "var(--surface-soft, #EEEBFA)",
+                    border: "1px solid var(--color-linen, #BDADEB)",
                     borderRadius: "10px",
                     padding: "18px 20px",
                   }}
@@ -517,7 +517,7 @@ export function CandidateComparisonModal({
                     Distinct Advantages (Candidate {i + 1}):
                   </div>
                   {uniqueList.length === 0 ? (
-                    <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>
+                    <span style={{ fontSize: "0.86rem", color: "var(--muted, #4729A3)" }}>
                       No unique skills (all overlap with compared profiles).
                     </span>
                   ) : (
@@ -542,12 +542,12 @@ export function CandidateComparisonModal({
                   )}
 
                   {/* Missing Rubric Skills */}
-                  <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
-                    <div style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "10px", color: "var(--color-coral-red, #DC3545)" }}>
+                  <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--color-linen, #BDADEB)" }}>
+                    <div style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "10px", color: "var(--color-coral-red, #29136C)" }}>
                       Missing Rubric Requirements:
                     </div>
                     {c.missing_skills.length === 0 ? (
-                      <span style={{ fontSize: "0.86rem", color: "var(--color-liberty-green, #198754)", fontWeight: 650 }}>
+                      <span style={{ fontSize: "0.86rem", color: "var(--color-liberty-green, #4729A3)", fontWeight: 650 }}>
                         All mandatory requirements satisfied.
                       </span>
                     ) : (
@@ -556,9 +556,9 @@ export function CandidateComparisonModal({
                           <span
                             key={sIdx}
                             style={{
-                              background: "var(--bad-soft, #FDE8E8)",
-                              color: "var(--color-coral-red, #DC3545)",
-                              border: "1px solid var(--color-coral-red, #DC3545)",
+                              background: "var(--bad-soft, #EEEBFA)",
+                              color: "var(--color-coral-red, #29136C)",
+                              border: "1px solid var(--color-coral-red, #29136C)",
                               fontSize: "0.82rem",
                               fontWeight: 650,
                               padding: "4px 10px",
@@ -584,7 +584,7 @@ export function CandidateComparisonModal({
               margin: "0 0 16px",
               fontSize: "1.05rem",
               fontWeight: 700,
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
             }}
           >
             Evaluator Verdict Summaries
@@ -597,16 +597,16 @@ export function CandidateComparisonModal({
               <div
                 key={c.candidate_id}
                 style={{
-                  background: "var(--surface-soft, #FAFAFA)",
-                  border: "1px solid var(--color-linen, #EBEAEA)",
+                  background: "var(--surface-soft, #EEEBFA)",
+                  border: "1px solid var(--color-linen, #BDADEB)",
                   borderRadius: "10px",
                   padding: "18px 20px",
                   fontSize: "0.92rem",
                   lineHeight: 1.65,
-                  color: "var(--ink, #150202)",
+                  color: "var(--ink, #29136C)",
                 }}
               >
-                <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--muted, #606060)", fontSize: "0.86rem" }}>
+                <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--muted, #4729A3)", fontSize: "0.86rem" }}>
                   Candidate {i + 1} Assessment:
                 </div>
                 <p style={{ margin: 0 }}>{c.verdict_summary || "No specific verdict recorded."}</p>

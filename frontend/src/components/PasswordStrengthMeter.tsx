@@ -22,10 +22,10 @@ const LABELS: Record<string, string> = {
 };
 
 const LEVEL_COLORS: Record<string, string> = {
-  weak: "#DC3545", // Coral Red
-  fair: "#D97706", // Mustard Yellow (accessible text tone)
-  good: "#198754", // Liberty Green
-  strong: "#198754", // Liberty Green
+  weak: "#29136C", // Coral Red
+  fair: "#8B70DB", // Mustard Yellow (accessible text tone)
+  good: "#4729A3", // Liberty Green
+  strong: "#4729A3", // Liberty Green
 };
 
 function evaluateLocally(password: string): PasswordStrength {
@@ -76,7 +76,7 @@ export function PasswordStrengthMeter({ password, onChange }: PasswordStrengthMe
           <span
             key={i}
             className="strength-bar__segment"
-            style={{ background: i < filled ? color : "var(--color-linen, #EBEAEA)" }}
+            style={{ background: i < filled ? color : "var(--color-linen, #BDADEB)" }}
           />
         ))}
       </div>

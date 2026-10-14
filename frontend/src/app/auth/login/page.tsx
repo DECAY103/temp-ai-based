@@ -91,9 +91,9 @@ export default function LoginPage() {
         {deletedNotice && (
           <div
             style={{
-              background: "var(--good-soft, #E8F5E9)",
-              border: "1px solid var(--color-liberty-green, #198754)",
-              color: "var(--color-liberty-green, #198754)",
+              background: "var(--good-soft, #EEEBFA)",
+              border: "1px solid var(--color-liberty-green, #4729A3)",
+              color: "var(--color-liberty-green, #4729A3)",
               padding: "10px 14px",
               borderRadius: "8px",
               marginBottom: "16px",
@@ -113,7 +113,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setDeletedNotice(false)}
               aria-label="Dismiss notice"
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", display: "flex", alignItems: "center" }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #4729A3)", display: "flex", alignItems: "center" }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18" />

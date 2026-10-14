@@ -106,10 +106,10 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
 
       <div className="status-batch-box">
         <div style={{ minWidth: 0, flex: "1 1 auto" }}>
-          <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #606060)", fontWeight: 700, display: "block" }}>
+          <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #4729A3)", fontWeight: 700, display: "block" }}>
             {role === "candidate" ? "Candidate Submission ID" : "Recruiter Batch ID"}
           </span>
-          <code style={{ fontSize: "0.88rem", color: "var(--ink, #150202)", wordBreak: "break-all", fontWeight: 600 }}>{batchId}</code>
+          <code style={{ fontSize: "0.88rem", color: "var(--ink, #29136C)", wordBreak: "break-all", fontWeight: 600 }}>{batchId}</code>
         </div>
         <button
           type="button"
@@ -134,30 +134,30 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
       </div>
       <div className="status-meta" style={{ fontSize: "0.88rem" }}>
         <span>{status.processed_files} of {status.total_files} processed</span>
-        {status.failed_files > 0 && <span style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 650 }}>{status.failed_files} failed</span>}
+        {status.failed_files > 0 && <span style={{ color: "var(--color-coral-red, #29136C)", fontWeight: 650 }}>{status.failed_files} failed</span>}
         {status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}
       </div>
 
       {status.failed_files > 0 && (
-        <div style={{ marginTop: "16px", padding: "16px 18px", background: "var(--bad-soft, #FDE8E8)", border: "1px solid var(--color-coral-red, #DC3545)", borderRadius: "10px" }}>
+        <div style={{ marginTop: "16px", padding: "16px 18px", background: "var(--bad-soft, #EEEBFA)", border: "1px solid var(--color-coral-red, #29136C)", borderRadius: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--color-coral-red, #DC3545)" }}>
+            <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--color-coral-red, #29136C)" }}>
               {status.failed_files} candidate file(s) failed evaluation
             </span>
           </div>
           {status.error_logs && status.error_logs.length > 0 ? (
             <div>
-              <span style={{ fontSize: "0.84rem", fontWeight: 650, color: "var(--muted, #606060)", display: "block", marginBottom: "6px" }}>
+              <span style={{ fontSize: "0.84rem", fontWeight: 650, color: "var(--muted, #4729A3)", display: "block", marginBottom: "6px" }}>
                 Diagnostic logs:
               </span>
-              <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.85rem", color: "var(--color-coral-red, #DC3545)", wordBreak: "break-word" }}>
+              <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.85rem", color: "var(--color-coral-red, #29136C)", wordBreak: "break-word" }}>
                 {status.error_logs.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
               </ul>
             </div>
           ) : (
-            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--color-coral-red, #DC3545)" }}>
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--color-coral-red, #29136C)" }}>
               Evaluation failed during text processing or AI scoring. View ranked results to inspect individual candidate logs.
             </p>
           )}

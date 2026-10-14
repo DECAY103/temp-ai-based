@@ -116,17 +116,17 @@ export default function Home() {
               display: "grid",
               gap: "8px",
               fontSize: "0.95rem",
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
             }}
           >
             <li>
-              <strong>Harsha B</strong> <span style={{ color: "var(--muted, #606060)" }}>&mdash; 241IT031</span>
+              <strong>Harsha B</strong> <span style={{ color: "var(--muted, #4729A3)" }}>&mdash; 241IT031</span>
             </li>
             <li>
-              <strong>Harshith R</strong> <span style={{ color: "var(--muted, #606060)" }}>&mdash; 241IT032</span>
+              <strong>Harshith R</strong> <span style={{ color: "var(--muted, #4729A3)" }}>&mdash; 241IT032</span>
             </li>
             <li>
-              <strong>Rohith Marthula</strong> <span style={{ color: "var(--muted, #606060)" }}>&mdash; 241IT044</span>
+              <strong>Rohith Marthula</strong> <span style={{ color: "var(--muted, #4729A3)" }}>&mdash; 241IT044</span>
             </li>
           </ul>
         </div>
@@ -148,7 +148,7 @@ export default function Home() {
             style={{
               margin: 0,
               fontSize: "0.95rem",
-              color: "var(--ink, #150202)",
+              color: "var(--ink, #29136C)",
               fontWeight: 650,
             }}
           >

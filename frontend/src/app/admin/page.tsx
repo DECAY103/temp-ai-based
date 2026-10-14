@@ -203,11 +203,11 @@ export default function AdminPage() {
       {resetSuccessMessage && (
         <div
           style={{
-            background: "var(--good-soft, #E8F5E9)",
-            border: "1px solid var(--color-liberty-green, #198754)",
+            background: "var(--good-soft, #EEEBFA)",
+            border: "1px solid var(--color-liberty-green, #4729A3)",
             borderRadius: "10px",
             padding: "14px 18px",
-            color: "var(--color-liberty-green, #198754)",
+            color: "var(--color-liberty-green, #4729A3)",
             marginBottom: "20px",
             display: "flex",
             justifyContent: "space-between",
@@ -224,7 +224,7 @@ export default function AdminPage() {
             type="button"
             onClick={() => setResetSuccessMessage(null)}
             aria-label="Dismiss message"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #198754)", display: "flex", alignItems: "center" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-liberty-green, #4729A3)", display: "flex", alignItems: "center" }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -237,11 +237,11 @@ export default function AdminPage() {
       {error && (
         <div
           style={{
-            background: "var(--bad-soft, #FDE8E8)",
-            border: "1px solid var(--color-coral-red, #DC3545)",
+            background: "var(--bad-soft, #EEEBFA)",
+            border: "1px solid var(--color-coral-red, #29136C)",
             borderRadius: "10px",
             padding: "14px 18px",
-            color: "var(--color-coral-red, #DC3545)",
+            color: "var(--color-coral-red, #29136C)",
             marginBottom: "20px",
           }}
         >
@@ -350,7 +350,7 @@ export default function AdminPage() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                      <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#4729A3" }}>
                         Loading registered users...
                       </td>
                     </tr>
@@ -364,7 +364,7 @@ export default function AdminPage() {
                     filteredUsers.map((u) => (
                       <tr key={u.id}>
                         <td style={{ fontWeight: 600 }}>{u.username}</td>
-                        <td style={{ color: "#475569" }}>{u.email}</td>
+                        <td style={{ color: "var(--ink, #29136C)" }}>{u.email}</td>
                         <td>
                           <span
                             className={`admin-role-badge admin-role-badge--${
@@ -378,12 +378,12 @@ export default function AdminPage() {
                             {u.role}
                           </span>
                         </td>
-                        <td style={{ color: "#64748b" }}>{formatTimestamp(u.created_at)}</td>
+                        <td style={{ color: "#4729A3" }}>{formatTimestamp(u.created_at)}</td>
                         <td>
                           {u.last_login_at ? (
-                            <span style={{ color: "#334155" }}>{formatTimestamp(u.last_login_at)}</span>
+                            <span style={{ color: "var(--ink, #29136C)" }}>{formatTimestamp(u.last_login_at)}</span>
                           ) : (
-                            <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Never logged in</span>
+                            <span style={{ color: "var(--muted, #4729A3)", fontStyle: "italic" }}>Never logged in</span>
                           )}
                         </td>
                         <td>
@@ -408,9 +408,9 @@ export default function AdminPage() {
                               type="button"
                               className="admin-btn-action"
                               style={{
-                                background: "var(--bad-soft, #FDE8E8)",
-                                color: "var(--color-coral-red, #DC3545)",
-                                border: "1px solid var(--color-coral-red, #DC3545)",
+                                background: "var(--bad-soft, #EEEBFA)",
+                                color: "var(--color-coral-red, #29136C)",
+                                border: "1px solid var(--color-coral-red, #29136C)",
                               }}
                               onClick={() => setUserToDelete(u)}
                               title="Delete user record"
@@ -466,7 +466,7 @@ export default function AdminPage() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                      <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#4729A3" }}>
                         Loading system activity logs...
                       </td>
                     </tr>
@@ -479,27 +479,27 @@ export default function AdminPage() {
                   ) : (
                     filteredActivities.map((log) => (
                       <tr key={log.id}>
-                        <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>
+                        <td style={{ whiteSpace: "nowrap", color: "#4729A3" }}>
                           {formatTimestamp(log.created_at)}
                         </td>
                         <td style={{ fontWeight: 500 }}>{log.email || log.user_id || "System"}</td>
                         <td>
                           <code
                             style={{
-                              background: "#f1f5f9",
+                              background: "var(--surface-soft, #EEEBFA)",
                               padding: "2px 6px",
                               borderRadius: "4px",
                               fontSize: "0.8rem",
-                              color: "#0f172a",
+                              color: "var(--ink, #29136C)",
                             }}
                           >
                             {log.action}
                           </code>
                         </td>
-                        <td style={{ color: "#475569", maxWidth: "340px", wordBreak: "break-word" }}>
+                        <td style={{ color: "var(--ink, #29136C)", maxWidth: "340px", wordBreak: "break-word" }}>
                           {log.detail || "—"}
                         </td>
-                        <td style={{ color: "#64748b", fontFamily: "monospace", fontSize: "0.8rem" }}>
+                        <td style={{ color: "#4729A3", fontFamily: "monospace", fontSize: "0.8rem" }}>
                           {log.ip_address || "—"}
                         </td>
                       </tr>
@@ -550,7 +550,7 @@ export default function AdminPage() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                      <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#4729A3" }}>
                         Loading data transfer logs...
                       </td>
                     </tr>
@@ -563,15 +563,15 @@ export default function AdminPage() {
                   ) : (
                     filteredTransfers.map((t) => (
                       <tr key={t.id}>
-                        <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>
+                        <td style={{ whiteSpace: "nowrap", color: "#4729A3" }}>
                           {formatTimestamp(t.created_at)}
                         </td>
                         <td style={{ fontWeight: 500 }}>{t.email || "Anonymous"}</td>
                         <td>
                           <span
                             style={{
-                              background: "#f8fafc",
-                              border: "1px solid #e2e8f0",
+                              background: "var(--surface-soft, #EEEBFA)",
+                              border: "1px solid var(--line, #BDADEB)",
                               padding: "2px 8px",
                               borderRadius: "6px",
                               fontSize: "0.78rem",
@@ -584,13 +584,13 @@ export default function AdminPage() {
                         <td style={{ maxWidth: "260px", wordBreak: "break-all", fontFamily: "monospace", fontSize: "0.82rem" }}>
                           {t.filename}
                         </td>
-                        <td style={{ color: "#64748b", whiteSpace: "nowrap" }}>
+                        <td style={{ color: "#4729A3", whiteSpace: "nowrap" }}>
                           {formatFileSize(t.filesize_bytes)}
                         </td>
                         <td>
                           <span
                             style={{
-                              color: t.status === "success" ? "var(--color-liberty-green, #198754)" : "var(--color-coral-red, #DC3545)",
+                              color: t.status === "success" ? "var(--color-liberty-green, #4729A3)" : "var(--color-coral-red, #29136C)",
                               fontWeight: 600,
                               fontSize: "0.8rem",
                             }}
@@ -615,7 +615,7 @@ export default function AdminPage() {
             <div className="admin-modal-header">
               <div>
                 <h2>Forensic Trail: {inspectedUser.username}</h2>
-                <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "#64748b" }}>
+                <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "#4729A3" }}>
                   {inspectedUser.email} • Role: {inspectedUser.role} • Registered: {formatTimestamp(inspectedUser.created_at)}
                 </p>
               </div>
@@ -635,11 +635,11 @@ export default function AdminPage() {
 
             <div className="admin-modal-body">
               {loadingUserLogs ? (
-                <p style={{ textAlign: "center", color: "var(--muted, #606060)", padding: "20px" }}>
+                <p style={{ textAlign: "center", color: "var(--muted, #4729A3)", padding: "20px" }}>
                   Retrieving user activity logs...
                 </p>
               ) : userLogs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px", color: "var(--muted, #606060)" }}>
+                <div style={{ textAlign: "center", padding: "30px", color: "var(--muted, #4729A3)" }}>
                   No logged activity records for this user yet.
                 </div>
               ) : (
@@ -649,8 +649,8 @@ export default function AdminPage() {
                       key={log.id}
                       style={{
                         padding: "12px 14px",
-                        background: "var(--surface-soft, #FAFAFA)",
-                        border: "1px solid var(--line, #EBEAEA)",
+                        background: "var(--surface-soft, #EEEBFA)",
+                        border: "1px solid var(--line, #BDADEB)",
                         borderRadius: "8px",
                       }}
                     >
@@ -658,17 +658,17 @@ export default function AdminPage() {
                         <code style={{ fontWeight: 700, color: "var(--accent, #4729A3)", fontSize: "0.85rem" }}>
                           {log.action}
                         </code>
-                        <span style={{ fontSize: "0.78rem", color: "var(--muted, #606060)" }}>
+                        <span style={{ fontSize: "0.78rem", color: "var(--muted, #4729A3)" }}>
                           {formatTimestamp(log.created_at)}
                         </span>
                       </div>
                       {log.detail && (
-                        <p style={{ margin: "4px 0", fontSize: "0.84rem", color: "var(--ink, #150202)" }}>
+                        <p style={{ margin: "4px 0", fontSize: "0.84rem", color: "var(--ink, #29136C)" }}>
                           {log.detail}
                         </p>
                       )}
                       {log.ip_address && (
-                        <p style={{ margin: "2px 0 0", fontSize: "0.74rem", color: "var(--muted, #606060)", fontFamily: "monospace" }}>
+                        <p style={{ margin: "2px 0 0", fontSize: "0.74rem", color: "var(--muted, #4729A3)", fontFamily: "monospace" }}>
                           IP: {log.ip_address}
                         </p>
                       )}
@@ -703,14 +703,14 @@ export default function AdminPage() {
       {showResetModal && (
         <div className="admin-modal-backdrop" onClick={() => !resetting && setShowResetModal(false)}>
           <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header" style={{ borderBottomColor: "#fee2e2" }}>
+            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #BDADEB)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink, #29136C)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <h2 style={{ color: "#b91c1c", margin: 0 }}>Wipe All Tables & Reset DB</h2>
+                <h2 style={{ color: "var(--ink, #29136C)", margin: 0 }}>Wipe All Tables & Reset DB</h2>
               </div>
               <button
                 type="button"
@@ -743,7 +743,7 @@ export default function AdminPage() {
               <div>
                 <label
                   htmlFor="reset-confirm-input"
-                  style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "#475569" }}
+                  style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--ink, #29136C)" }}
                 >
                   Type <strong>RESET</strong> or <strong>WIPE</strong> below to confirm:
                 </label>
@@ -809,14 +809,14 @@ export default function AdminPage() {
             style={{ maxWidth: 460 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
+            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #BDADEB)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #DC3545)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #29136C)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <h2 style={{ color: "var(--color-coral-red, #DC3545)", margin: 0 }}>Delete User Account</h2>
+                <h2 style={{ color: "var(--color-coral-red, #29136C)", margin: 0 }}>Delete User Account</h2>
               </div>
               <button
                 type="button"
@@ -834,24 +834,24 @@ export default function AdminPage() {
             </div>
 
             <div className="admin-modal-body">
-              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "var(--ink, #150202)", lineHeight: 1.5 }}>
+              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", color: "var(--ink, #29136C)", lineHeight: 1.5 }}>
                 Are you sure you want to permanently delete this user?
               </p>
               <div
                 style={{
                   padding: "10px 14px",
-                  background: "var(--surface-soft, #FAFAFA)",
-                  border: "1px solid var(--line, #EBEAEA)",
+                  background: "var(--surface-soft, #EEEBFA)",
+                  border: "1px solid var(--line, #BDADEB)",
                   borderRadius: 8,
                   marginBottom: 12,
                 }}
               >
-                <div style={{ fontWeight: 700, color: "var(--ink, #150202)" }}>{userToDelete.email}</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--muted, #606060)" }}>
+                <div style={{ fontWeight: 700, color: "var(--ink, #29136C)" }}>{userToDelete.email}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--muted, #4729A3)" }}>
                   Role: {userToDelete.role} • ID: {userToDelete.id}
                 </div>
               </div>
-              <p style={{ margin: 0, fontSize: "0.84rem", color: "#64748b", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "0.84rem", color: "#4729A3", lineHeight: 1.5 }}>
                 This will revoke their access, delete authentication credentials, and purge active sessions.
               </p>
             </div>

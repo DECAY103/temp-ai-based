@@ -148,7 +148,7 @@ export function SiteHeader() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "var(--color-coral-red, #DC3545)",
+                      color: "var(--color-coral-red, #29136C)",
                       fontSize: "0.86rem",
                       cursor: "pointer",
                       padding: 0,
@@ -324,14 +324,14 @@ export function SiteHeader() {
             style={{ maxWidth: 460 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #EBEAEA)" }}>
+            <div className="admin-modal-header" style={{ borderBottomColor: "var(--line, #BDADEB)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #DC3545)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-coral-red, #29136C)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <h2 id="delete-account-modal-title" style={{ color: "var(--color-coral-red, #DC3545)", margin: 0, fontSize: "1.2rem" }}>Delete Account</h2>
+                <h2 id="delete-account-modal-title" style={{ color: "var(--color-coral-red, #29136C)", margin: 0, fontSize: "1.2rem" }}>Delete Account</h2>
               </div>
               <button
                 type="button"
@@ -362,9 +362,9 @@ export function SiteHeader() {
                   style={{
                     marginTop: 14,
                     padding: "8px 12px",
-                    background: "var(--bad-soft, #FDE8E8)",
-                    border: "1px solid var(--color-coral-red, #DC3545)",
-                    color: "var(--color-coral-red, #DC3545)",
+                    background: "var(--bad-soft, #EEEBFA)",
+                    border: "1px solid var(--color-coral-red, #29136C)",
+                    color: "var(--color-coral-red, #29136C)",
                     borderRadius: 8,
                     fontSize: "0.82rem",
                   }}

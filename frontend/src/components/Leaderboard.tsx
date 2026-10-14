@@ -161,7 +161,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px 0", textAlign: "center", color: "var(--muted, #606060)" }}>
+      <div style={{ padding: "40px 0", textAlign: "center", color: "var(--muted, #4729A3)" }}>
         <p style={{ fontSize: "1rem" }}>Loading candidate evaluations…</p>
       </div>
     );
@@ -169,8 +169,8 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
   if (error) {
     return (
-      <div style={{ padding: "24px", background: "var(--bad-soft, #FDE8E8)", border: "1px solid var(--color-coral-red, #DC3545)", borderRadius: "10px", margin: "20px 0" }}>
-        <p role="alert" style={{ color: "var(--color-coral-red, #DC3545)", fontWeight: 650, margin: 0 }}>{error}</p>
+      <div style={{ padding: "24px", background: "var(--pale-lavender, #EEEBFA)", border: "1px solid var(--light-purple, #BDADEB)", borderRadius: "10px", margin: "20px 0" }}>
+        <p role="alert" style={{ color: "var(--deep-purple, #29136C)", fontWeight: 650, margin: 0 }}>{error}</p>
       </div>
     );
   }
@@ -190,10 +190,10 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
         }}
       >
         <div>
-          <p className="eyebrow" style={{ marginBottom: "4px", fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted, #606060)", fontWeight: 700 }}>
+          <p className="eyebrow" style={{ marginBottom: "4px", fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted, #4729A3)", fontWeight: 700 }}>
             Evaluation Results
           </p>
-          <h2 id="leaderboard-heading" style={{ margin: 0, fontSize: "1.55rem", fontWeight: 700, color: "var(--ink, #150202)", letterSpacing: "-0.02em" }}>
+          <h2 id="leaderboard-heading" style={{ margin: 0, fontSize: "1.55rem", fontWeight: 700, color: "var(--ink, #29136C)", letterSpacing: "-0.02em" }}>
             Ranked Candidates
           </h2>
         </div>
@@ -211,13 +211,13 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
               borderRadius: "8px",
               border: isCustomWeightsActive
                 ? "1.5px solid var(--primary-1, #4729A3)"
-                : "1px solid var(--color-grey-1, #C6C6C6)",
+                : "1px solid var(--color-grey-1, #BDADEB)",
               background: isCustomWeightsActive
                 ? "var(--accent-soft, #EEEBFA)"
                 : "var(--surface, #FFFFFF)",
               color: isCustomWeightsActive
                 ? "var(--primary-1, #4729A3)"
-                : "var(--ink, #150202)",
+                : "var(--ink, #29136C)",
               fontSize: "0.9rem",
               fontWeight: 650,
               cursor: "pointer",
@@ -256,7 +256,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
           {/* Sort Control */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "0.88rem", color: "var(--muted, #606060)", fontWeight: 650 }}>Sort by:</span>
+            <span style={{ fontSize: "0.88rem", color: "var(--muted, #4729A3)", fontWeight: 650 }}>Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
@@ -264,9 +264,9 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 padding: "8px 14px",
                 borderRadius: "8px",
                 fontSize: "0.9rem",
-                border: "1px solid var(--color-grey-1, #C6C6C6)",
+                border: "1px solid var(--color-grey-1, #BDADEB)",
                 background: "var(--surface, #FFFFFF)",
-                color: "var(--ink, #150202)",
+                color: "var(--ink, #29136C)",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -287,7 +287,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
           style={{
             margin: "0 0 28px",
             padding: "26px 30px",
-            background: "var(--surface-soft, #FAFAFA)",
+            background: "var(--surface-soft, #EEEBFA)",
             border: "1px solid var(--accent-border, #BDADEB)",
             borderRadius: "14px",
             boxShadow: "var(--shadow-sm)",
@@ -302,7 +302,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
               flexWrap: "wrap",
               gap: "16px",
               marginBottom: "20px",
-              borderBottom: "1px solid var(--color-linen, #EBEAEA)",
+              borderBottom: "1px solid var(--line, #BDADEB)",
               paddingBottom: "16px",
             }}
           >
@@ -310,7 +310,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
               <h3 style={{ margin: "0 0 4px", fontSize: "1.1rem", fontWeight: 700, color: "var(--primary-1, #4729A3)" }}>
                 Scoring Weight Sensitivity Tuner
               </h3>
-              <p style={{ margin: 0, fontSize: "0.92rem", color: "var(--muted, #606060)", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "0.92rem", color: "var(--muted, #4729A3)", lineHeight: 1.5 }}>
                 Simulate alternate hiring priorities by tuning rubric criteria weights. Composite scores and leaderboard rankings re-index dynamically in real time.
               </p>
             </div>
@@ -323,7 +323,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   fontWeight: 650,
                   padding: "7px 14px",
                   borderRadius: "8px",
-                  border: "1px solid var(--color-grey-1, #C6C6C6)",
+                  border: "1px solid var(--color-grey-1, #BDADEB)",
                   background: "var(--surface, #FFFFFF)",
                   cursor: "pointer",
                 }}
@@ -336,7 +336,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
           {/* Quick Presets Bar */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "22px" }}>
-            <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--muted, #606060)" }}>Evaluation Profiles:</span>
+            <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--muted, #4729A3)" }}>Evaluation Profiles:</span>
             {[
               { label: "Balanced (50% / 35% / 15%)", skill: 50, exp: 35, semantic: 15, active: isBalancedActive },
               { label: "Skills-First (70% / 20% / 10%)", skill: 70, exp: 20, semantic: 10, active: isSkillsFirstActive },
@@ -353,9 +353,9 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   borderRadius: "7px",
                   border: p.active
                     ? "1.5px solid var(--primary-1, #4729A3)"
-                    : "1px solid var(--color-grey-1, #C6C6C6)",
+                    : "1px solid var(--color-grey-1, #BDADEB)",
                   background: p.active ? "var(--accent-soft, #EEEBFA)" : "var(--surface, #FFFFFF)",
-                  color: p.active ? "var(--primary-1, #4729A3)" : "var(--ink, #150202)",
+                  color: p.active ? "var(--primary-1, #4729A3)" : "var(--ink, #29136C)",
                   fontWeight: p.active ? 700 : 600,
                   cursor: "pointer",
                 }}
@@ -379,13 +379,13 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             <div
               style={{
                 background: "var(--surface, #FFFFFF)",
-                border: "1px solid var(--color-linen, #EBEAEA)",
+                border: "1px solid var(--line, #BDADEB)",
                 borderRadius: "10px",
                 padding: "16px 18px",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Skill Match Weight</span>
+                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Skill Match Weight</span>
                 <span
                   style={{
                     fontWeight: 700,
@@ -406,7 +406,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 onChange={(e) => setWeights((w) => ({ ...w, skill: Number(e.target.value) }))}
                 style={{ width: "100%", accentColor: "var(--primary-1, #4729A3)", cursor: "pointer", marginBottom: "6px" }}
               />
-              <span style={{ fontSize: "0.82rem", color: "var(--muted, #606060)", display: "block" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--muted, #4729A3)", display: "block" }}>
                 Verified rubric requirements and keyword alignment
               </span>
             </div>
@@ -415,13 +415,13 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             <div
               style={{
                 background: "var(--surface, #FFFFFF)",
-                border: "1px solid var(--color-linen, #EBEAEA)",
+                border: "1px solid var(--line, #BDADEB)",
                 borderRadius: "10px",
                 padding: "16px 18px",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Experience Weight</span>
+                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Experience Weight</span>
                 <span
                   style={{
                     fontWeight: 700,
@@ -442,7 +442,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 onChange={(e) => setWeights((w) => ({ ...w, exp: Number(e.target.value) }))}
                 style={{ width: "100%", accentColor: "var(--primary-2, #8B70DB)", cursor: "pointer", marginBottom: "6px" }}
               />
-              <span style={{ fontSize: "0.82rem", color: "var(--muted, #606060)", display: "block" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--muted, #4729A3)", display: "block" }}>
                 Documented career tenure, title seniority, and roles
               </span>
             </div>
@@ -451,13 +451,13 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             <div
               style={{
                 background: "var(--surface, #FFFFFF)",
-                border: "1px solid var(--color-linen, #EBEAEA)",
+                border: "1px solid var(--line, #BDADEB)",
                 borderRadius: "10px",
                 padding: "16px 18px",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #150202)" }}>Semantic Weight</span>
+                <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--ink, #29136C)" }}>Semantic Weight</span>
                 <span
                   style={{
                     fontWeight: 700,
@@ -478,7 +478,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 onChange={(e) => setWeights((w) => ({ ...w, semantic: Number(e.target.value) }))}
                 style={{ width: "100%", accentColor: "var(--primary-1, #4729A3)", cursor: "pointer", marginBottom: "6px" }}
               />
-              <span style={{ fontSize: "0.82rem", color: "var(--muted, #606060)", display: "block" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--muted, #4729A3)", display: "block" }}>
                 Stage-1 embedding contextual cosine similarity
               </span>
             </div>
@@ -516,36 +516,36 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
       {/* ── Main Leaderboard Table ────────────────────────────────────────── */}
       {completed.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "12px", color: "var(--muted, #606060)" }}>
+        <div style={{ padding: "48px 20px", textAlign: "center", background: "var(--surface-soft, #EEEBFA)", border: "1px solid var(--color-grey-1, #BDADEB)", borderRadius: "12px", color: "var(--muted, #4729A3)" }}>
           <p style={{ margin: 0, fontSize: "1rem" }}>No completed candidate evaluations found for this job batch.</p>
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="table-wrap leaderboard-desktop-table" style={{ border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "12px", overflow: "hidden", background: "var(--surface, #FFFFFF)" }}>
+          <div className="table-wrap leaderboard-desktop-table" style={{ border: "1px solid var(--color-grey-1, #BDADEB)", borderRadius: "12px", overflow: "hidden", background: "var(--surface, #FFFFFF)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <caption className="sr-only">Candidate evaluation leaderboard and ranked scores</caption>
               <thead>
-                <tr style={{ background: "var(--surface-soft, #FAFAFA)", borderBottom: "1px solid var(--color-grey-1, #C6C6C6)" }}>
+                <tr style={{ background: "var(--surface-soft, #EEEBFA)", borderBottom: "1px solid var(--color-grey-1, #BDADEB)" }}>
                   <th scope="col" style={{ width: "52px", textAlign: "center", padding: "14px 12px" }}>
                     <span className="sr-only">Select for comparison</span>
                   </th>
-                  <th scope="col" style={{ width: "110px", padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
+                  <th scope="col" style={{ width: "110px", padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "left" }}>
                     Rank
                   </th>
-                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "left" }}>
                     Candidate File
                   </th>
-                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "right" }}>
                     {isCustomWeightsActive ? "What-If Score" : "Overall Score"}
                   </th>
-                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "right" }}>
                     Skill Match
                   </th>
-                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "right" }}>
                     Experience
                   </th>
-                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "center" }}>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #29136C)", textAlign: "center" }}>
                     Status
                   </th>
                   <th scope="col" style={{ padding: "14px 16px", textAlign: "right" }}>
@@ -575,7 +575,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                       aria-label={`Candidate ranked #${currentRank}, score ${r.custom_score.toFixed(1)}. Select to view evaluation report.`}
                       style={{
                         cursor: "pointer",
-                        borderBottom: "1px solid var(--color-linen, #EBEAEA)",
+                        borderBottom: "1px solid var(--line, #BDADEB)",
                         background: isSelectedForCompare ? "var(--accent-soft, #EEEBFA)" : undefined,
                         transition: "background 0.15s ease",
                       }}
@@ -602,7 +602,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                       {/* Rank with Delta Indicator */}
                       <td style={{ padding: "16px", textAlign: "left" }}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                          <strong style={{ fontSize: "1.05rem", fontVariantNumeric: "tabular-nums", color: "var(--ink, #150202)" }}>
+                          <strong style={{ fontSize: "1.05rem", fontVariantNumeric: "tabular-nums", color: "var(--ink, #29136C)" }}>
                             #{currentRank}
                           </strong>
                           {isCustomWeightsActive && (
@@ -619,18 +619,14 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                                 fontWeight: 700,
                                 padding: "2px 8px",
                                 borderRadius: "4px",
-                                background:
-                                  rankDelta > 0
-                                    ? "var(--good-soft, #E8F5E9)"
-                                    : rankDelta < 0
-                                    ? "var(--bad-soft, #FDE8E8)"
-                                    : "var(--color-linen, #EBEAEA)",
+                                background: "var(--pale-lavender, #EEEBFA)",
+                                border: "1px solid var(--light-purple, #BDADEB)",
                                 color:
                                   rankDelta > 0
-                                    ? "var(--color-liberty-green, #198754)"
+                                    ? "var(--primary-purple, #4729A3)"
                                     : rankDelta < 0
-                                    ? "var(--color-coral-red, #DC3545)"
-                                    : "var(--muted, #606060)",
+                                    ? "var(--deep-purple, #29136C)"
+                                    : "var(--muted, #4729A3)",
                                 fontVariantNumeric: "tabular-nums",
                               }}
                             >
@@ -642,10 +638,10 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
                       {/* Candidate File & Skills Overview */}
                       <td style={{ padding: "16px" }}>
-                        <div style={{ fontWeight: 650, color: "var(--ink, #150202)", fontSize: "0.98rem", wordBreak: "break-all" }}>
+                        <div style={{ fontWeight: 650, color: "var(--ink, #29136C)", fontSize: "0.98rem", wordBreak: "break-all" }}>
                           {r.filename || `Candidate ${r.candidate_id.slice(0, 8)}`}
                         </div>
-                        <div style={{ fontSize: "0.86rem", color: "var(--muted, #606060)", marginTop: "4px" }}>
+                        <div style={{ fontSize: "0.86rem", color: "var(--muted, #4729A3)", marginTop: "4px" }}>
                           {r.matching_skills.length} verified rubric skills &bull; {r.missing_skills.length} gaps
                         </div>
                       </td>
@@ -656,7 +652,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                           {r.custom_score.toFixed(1)}
                         </div>
                         {isCustomWeightsActive && (
-                          <div style={{ fontSize: "0.8rem", color: "var(--muted, #606060)", fontVariantNumeric: "tabular-nums" }}>
+                          <div style={{ fontSize: "0.8rem", color: "var(--muted, #4729A3)", fontVariantNumeric: "tabular-nums" }}>
                             base: {r.overall_score.toFixed(1)}
                           </div>
                         )}
@@ -678,7 +674,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
                       {/* Status */}
                       <td style={{ padding: "16px", textAlign: "center" }}>
-                        <span className="status-chip" style={{ fontSize: "0.8rem", padding: "3px 10px", borderRadius: "99px", background: "var(--good-soft, #E8F5E9)", color: "var(--color-liberty-green, #198754)", border: "1px solid var(--color-liberty-green, #198754)", fontWeight: 650 }}>
+                        <span className="status-chip" style={{ fontSize: "0.8rem", padding: "3px 10px", borderRadius: "99px", background: "var(--good-soft, #EEEBFA)", color: "var(--color-liberty-green, #4729A3)", border: "1px solid var(--color-liberty-green, #4729A3)", fontWeight: 650 }}>
                           {r.status}
                         </span>
                       </td>
@@ -690,7 +686,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "6px",
-                            color: "var(--color-blue, #0D6EFD)",
+                            color: "var(--color-blue, #4729A3)",
                             fontWeight: 650,
                             fontSize: "0.9rem",
                           }}
@@ -806,7 +802,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   </div>
 
                   <div className="candidate-card__footer">
-                    <span className="status-chip" style={{ fontSize: "0.78rem", padding: "2px 8px", background: "var(--good-soft, #E8F5E9)", color: "var(--color-liberty-green, #198754)", border: "1px solid var(--color-liberty-green, #198754)", borderRadius: "99px", fontWeight: 650 }}>
+                    <span className="status-chip" style={{ fontSize: "0.78rem", padding: "2px 8px", background: "var(--good-soft, #EEEBFA)", color: "var(--color-liberty-green, #4729A3)", border: "1px solid var(--color-liberty-green, #4729A3)", borderRadius: "99px", fontWeight: 650 }}>
                       {r.status}
                     </span>
                     <span className="candidate-card__cta-btn">
@@ -826,32 +822,32 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
       {/* ── Pre-filtered Notice ────────────────────────────────────────────── */}
       {prefiltered.length > 0 && (
-        <p style={{ marginTop: "18px", fontSize: "0.9rem", color: "var(--muted, #606060)" }}>
+        <p style={{ marginTop: "18px", fontSize: "0.9rem", color: "var(--muted, #4729A3)" }}>
           {prefiltered.length} candidate{prefiltered.length === 1 ? " was" : "s were"} pre-filtered below the stage-1 semantic cutoff threshold.
         </p>
       )}
 
       {/* ── Failed Evaluations Section ──────────────────────────────────────── */}
       {failed.length > 0 && (
-        <div style={{ marginTop: "36px", padding: "22px 26px", background: "var(--bad-soft, #FDE8E8)", border: "1px solid var(--color-coral-red, #DC3545)", borderRadius: "12px" }}>
+        <div style={{ marginTop: "36px", padding: "22px 26px", background: "var(--pale-lavender, #EEEBFA)", border: "1px solid var(--light-purple, #BDADEB)", borderRadius: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-            <h3 style={{ margin: 0, fontSize: "1.1rem", color: "var(--color-coral-red, #DC3545)", fontWeight: 700 }}>
+            <h3 style={{ margin: 0, fontSize: "1.1rem", color: "var(--deep-purple, #29136C)", fontWeight: 700 }}>
               Failed Evaluations ({failed.length})
             </h3>
           </div>
-          <p style={{ margin: "0 0 18px", fontSize: "0.9rem", color: "var(--muted, #606060)", lineHeight: 1.5 }}>
+          <p style={{ margin: "0 0 18px", fontSize: "0.9rem", color: "var(--muted, #4729A3)", lineHeight: 1.5 }}>
             The following files could not be evaluated by the ingestion pipeline. Inspect recorded diagnostics below:
           </p>
           <div style={{ display: "grid", gap: "14px" }}>
             {failed.map((f, i) => (
-              <div key={f.candidate_id || i} style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--color-linen, #EBEAEA)", borderRadius: "8px", padding: "16px 18px" }}>
+              <div key={f.candidate_id || i} style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--line, #BDADEB)", borderRadius: "8px", padding: "16px 18px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                  <strong style={{ fontSize: "0.94rem" }}>{f.filename || `Candidate #${i + 1}`}</strong>
-                  <span style={{ fontSize: "0.78rem", background: "var(--bad-soft, #FDE8E8)", color: "var(--color-coral-red, #DC3545)", border: "1px solid var(--color-coral-red, #DC3545)", padding: "2px 10px", borderRadius: "99px", fontWeight: 700 }}>
+                  <strong style={{ fontSize: "0.94rem", color: "var(--deep-purple, #29136C)" }}>{f.filename || `Candidate #${i + 1}`}</strong>
+                  <span style={{ fontSize: "0.78rem", background: "var(--pale-lavender, #EEEBFA)", color: "var(--deep-purple, #29136C)", border: "1px solid var(--light-purple, #BDADEB)", padding: "2px 10px", borderRadius: "99px", fontWeight: 700 }}>
                     Failed
                   </span>
                 </div>
-                <div style={{ background: "var(--surface-soft, #FAFAFA)", padding: "12px 14px", borderRadius: "6px", border: "1px solid var(--color-linen, #EBEAEA)", fontFamily: "monospace", fontSize: "0.85rem", color: "var(--color-coral-red, #DC3545)", wordBreak: "break-word" }}>
+                <div style={{ background: "var(--surface, #ffffff)", padding: "12px 14px", borderRadius: "6px", border: "1px solid var(--line, #BDADEB)", fontFamily: "monospace", fontSize: "0.85rem", color: "var(--deep-purple, #29136C)", wordBreak: "break-word" }}>
                   {f.error_log || f.verdict_summary || "No specific error log recorded."}
                 </div>
               </div>
@@ -864,7 +860,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
       {selectedForCompare.length > 0 && (
         <div className="compare-floating-bar">
           <div className="compare-bar__chips">
-            <span style={{ fontWeight: 700, fontSize: "0.94rem", color: "var(--ink, #150202)", whiteSpace: "nowrap" }}>
+            <span style={{ fontWeight: 700, fontSize: "0.94rem", color: "var(--ink, #29136C)", whiteSpace: "nowrap" }}>
               Comparing ({selectedForCompare.length}/3):
             </span>
             {candidatesToCompare.map((c) => (
@@ -918,7 +914,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 fontWeight: 650,
                 padding: "8px 14px",
                 borderRadius: "8px",
-                border: "1px solid var(--color-grey-1, #C6C6C6)",
+                border: "1px solid var(--color-grey-1, #BDADEB)",
                 cursor: "pointer",
                 background: "var(--surface, #FFFFFF)",
               }}
@@ -957,12 +953,12 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             className="modal-responsive-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid var(--color-linen, #EBEAEA)", paddingBottom: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid var(--line, #BDADEB)", paddingBottom: "16px" }}>
               <div>
-                <p className="eyebrow" style={{ marginBottom: "4px", fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted, #606060)", fontWeight: 700 }}>
+                <p className="eyebrow" style={{ marginBottom: "4px", fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted, #4729A3)", fontWeight: 700 }}>
                   Candidate Evaluation Report
                 </p>
-                <h2 id="modal-eval-title" style={{ margin: 0, fontSize: "1.45rem", fontWeight: 700, color: "var(--ink, #150202)", wordBreak: "break-all" }}>
+                <h2 id="modal-eval-title" style={{ margin: 0, fontSize: "1.45rem", fontWeight: 700, color: "var(--ink, #29136C)", wordBreak: "break-all" }}>
                   {selected.filename || `Candidate ID: ${selected.candidate_id.slice(0, 8)}`}
                 </h2>
               </div>
@@ -978,8 +974,8 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   fontWeight: 650,
                   padding: "8px 14px",
                   borderRadius: "8px",
-                  border: "1px solid var(--color-grey-1, #C6C6C6)",
-                  background: "var(--surface-soft, #FAFAFA)",
+                  border: "1px solid var(--color-grey-1, #BDADEB)",
+                  background: "var(--surface-soft, #EEEBFA)",
                   cursor: "pointer",
                   flexShrink: 0,
                 }}
@@ -995,35 +991,35 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             {/* Score Grid */}
             <div className="modal-score-grid">
               <div>
-                <span style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Overall Rating</span>
+                <span style={{ fontSize: "0.85rem", color: "var(--muted, #4729A3)", fontWeight: 600 }}>Overall Rating</span>
                 <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--primary-1, #4729A3)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
                   {selected.overall_score.toFixed(1)}
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Skill Match</span>
-                <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--ink, #150202)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--muted, #4729A3)", fontWeight: 600 }}>Skill Match</span>
+                <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--ink, #29136C)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
                   {selected.skill_match_score.toFixed(1)}%
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Work Experience</span>
-                <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--ink, #150202)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--muted, #4729A3)", fontWeight: 600 }}>Work Experience</span>
+                <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--ink, #29136C)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
                   {selected.work_experience_score.toFixed(1)}%
                 </strong>
               </div>
             </div>
 
             {/* Evaluator Assessment */}
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: "0 0 8px", color: "var(--ink, #150202)" }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: "0 0 8px", color: "var(--ink, #29136C)" }}>
               Evaluator Assessment
             </h3>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.65, color: "var(--ink, #150202)", margin: "0 0 24px" }}>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.65, color: "var(--ink, #29136C)", margin: "0 0 24px" }}>
               {selected.verdict_summary || "No specific qualitative verdict recorded."}
             </p>
 
             {/* Matching Skills */}
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 10px", color: "var(--ink, #150202)" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 10px", color: "var(--ink, #29136C)" }}>
               Matching Skills ({selected.matching_skills.length})
             </h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" }}>
@@ -1032,9 +1028,9 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   <span
                     key={idx}
                     style={{
-                      background: "var(--good-soft, #E8F5E9)",
-                      color: "var(--color-liberty-green, #198754)",
-                      border: "1px solid var(--color-liberty-green, #198754)",
+                      background: "var(--pale-lavender, #EEEBFA)",
+                      color: "var(--primary-purple, #4729A3)",
+                      border: "1px solid var(--light-purple, #BDADEB)",
                       fontSize: "0.85rem",
                       fontWeight: 650,
                       padding: "4px 12px",
@@ -1045,12 +1041,12 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   </span>
                 ))
               ) : (
-                <span style={{ fontSize: "0.9rem", color: "var(--muted, #606060)" }}>None identified.</span>
+                <span style={{ fontSize: "0.9rem", color: "var(--muted, #4729A3)" }}>None identified.</span>
               )}
             </div>
 
             {/* Missing Rubric Skills */}
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 10px", color: "var(--ink, #150202)" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 10px", color: "var(--ink, #29136C)" }}>
               Missing Rubric Requirements ({selected.missing_skills.length})
             </h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
@@ -1059,9 +1055,9 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   <span
                     key={idx}
                     style={{
-                      background: "var(--bad-soft, #FDE8E8)",
-                      color: "var(--color-coral-red, #DC3545)",
-                      border: "1px solid var(--color-coral-red, #DC3545)",
+                      background: "var(--pale-lavender, #EEEBFA)",
+                      color: "var(--deep-purple, #29136C)",
+                      border: "1px solid var(--light-purple, #BDADEB)",
                       fontSize: "0.85rem",
                       fontWeight: 650,
                       padding: "4px 12px",
@@ -1072,14 +1068,14 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   </span>
                 ))
               ) : (
-                <span style={{ fontSize: "0.9rem", color: "var(--color-liberty-green, #198754)", fontWeight: 650 }}>
+                <span style={{ fontSize: "0.9rem", color: "var(--primary-purple, #4729A3)", fontWeight: 650 }}>
                   All requirements satisfied.
                 </span>
               )}
             </div>
 
             {/* Actions */}
-            <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", paddingTop: "20px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", paddingTop: "20px", borderTop: "1px solid var(--line, #BDADEB)" }}>
               <a
                 className="primary"
                 href={`/api/jobs/${batchId}/candidates/${selected.candidate_id}/resume`}
@@ -1110,7 +1106,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   fontSize: "0.92rem",
                   padding: "10px 18px",
                   borderRadius: "8px",
-                  border: "1px solid var(--color-grey-1, #C6C6C6)",
+                  border: "1px solid var(--color-grey-1, #BDADEB)",
                   fontWeight: 650,
                   cursor: "pointer",
                 }}
