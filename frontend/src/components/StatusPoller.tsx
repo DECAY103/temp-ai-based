@@ -104,8 +104,8 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         <span className="status-chip">{status.status}</span>
       </div>
 
-      <div style={{ background: "var(--surface-soft, #FAFAFA)", padding: "10px 14px", borderRadius: "8px", margin: "14px 0", border: "1px solid var(--line, #EBEAEA)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-        <div style={{ minWidth: 0 }}>
+      <div className="status-batch-box">
+        <div style={{ minWidth: 0, flex: "1 1 auto" }}>
           <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted, #606060)", fontWeight: 700, display: "block" }}>
             {role === "candidate" ? "Candidate Submission ID" : "Recruiter Batch ID"}
           </span>
@@ -113,8 +113,7 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         </div>
         <button
           type="button"
-          className="ghost"
-          style={{ fontSize: "0.84rem", padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0, borderRadius: "6px", border: "1px solid var(--color-grey-1, #C6C6C6)", cursor: "pointer", fontWeight: 600 }}
+          className="ghost batch-copy-btn"
           onClick={copyBatchId}
           aria-label="Copy Batch ID to clipboard"
         >

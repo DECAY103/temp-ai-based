@@ -516,198 +516,312 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
       {/* ── Main Leaderboard Table ────────────────────────────────────────── */}
       {completed.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--color-linen, #EBEAEA)", borderRadius: "12px" }}>
-          <p style={{ margin: 0, fontSize: "0.95rem", color: "var(--muted, #606060)" }}>
-            No completed candidate evaluations are available for this rubric batch.
-          </p>
+        <div style={{ padding: "48px 20px", textAlign: "center", background: "var(--surface-soft, #FAFAFA)", border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "12px", color: "var(--muted, #606060)" }}>
+          <p style={{ margin: 0, fontSize: "1rem" }}>No completed candidate evaluations found for this job batch.</p>
         </div>
       ) : (
-        <div className="table-wrap" style={{ border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "12px", overflow: "hidden", background: "var(--surface, #FFFFFF)" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <caption className="sr-only">Candidate evaluation leaderboard and ranked scores</caption>
-            <thead>
-              <tr style={{ background: "var(--surface-soft, #FAFAFA)", borderBottom: "1px solid var(--color-grey-1, #C6C6C6)" }}>
-                <th scope="col" style={{ width: "52px", textAlign: "center", padding: "14px 12px" }}>
-                  <span className="sr-only">Select for comparison</span>
-                </th>
-                <th scope="col" style={{ width: "110px", padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
-                  Rank
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
-                  Candidate File
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
-                  {isCustomWeightsActive ? "What-If Score" : "Overall Score"}
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
-                  Skill Match
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
-                  Experience
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "center" }}>
-                  Status
-                </th>
-                <th scope="col" style={{ padding: "14px 16px", textAlign: "right" }}>
-                  <span className="sr-only">Details Action</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {completed.map((r, i) => {
-                const currentRank = i + 1;
-                const baseRank = baselineRanks.get(r.candidate_id) || currentRank;
-                const rankDelta = baseRank - currentRank;
-                const isSelectedForCompare = selectedForCompare.includes(r.candidate_id);
+        <>
+          {/* Desktop Table View */}
+          <div className="table-wrap leaderboard-desktop-table" style={{ border: "1px solid var(--color-grey-1, #C6C6C6)", borderRadius: "12px", overflow: "hidden", background: "var(--surface, #FFFFFF)" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <caption className="sr-only">Candidate evaluation leaderboard and ranked scores</caption>
+              <thead>
+                <tr style={{ background: "var(--surface-soft, #FAFAFA)", borderBottom: "1px solid var(--color-grey-1, #C6C6C6)" }}>
+                  <th scope="col" style={{ width: "52px", textAlign: "center", padding: "14px 12px" }}>
+                    <span className="sr-only">Select for comparison</span>
+                  </th>
+                  <th scope="col" style={{ width: "110px", padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
+                    Rank
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "left" }}>
+                    Candidate File
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                    {isCustomWeightsActive ? "What-If Score" : "Overall Score"}
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                    Skill Match
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "right" }}>
+                    Experience
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", fontSize: "0.88rem", fontWeight: 700, color: "var(--ink, #150202)", textAlign: "center" }}>
+                    Status
+                  </th>
+                  <th scope="col" style={{ padding: "14px 16px", textAlign: "right" }}>
+                    <span className="sr-only">Details Action</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {completed.map((r, i) => {
+                  const currentRank = i + 1;
+                  const baseRank = baselineRanks.get(r.candidate_id) || currentRank;
+                  const rankDelta = baseRank - currentRank;
+                  const isSelectedForCompare = selectedForCompare.includes(r.candidate_id);
 
-                return (
-                  <tr
-                    key={r.candidate_id}
-                    onClick={() => setSelected(r)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelected(r);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Candidate ranked #${currentRank}, score ${r.custom_score.toFixed(1)}. Select to view evaluation report.`}
-                    style={{
-                      cursor: "pointer",
-                      borderBottom: "1px solid var(--color-linen, #EBEAEA)",
-                      background: isSelectedForCompare ? "var(--accent-soft, #EEEBFA)" : undefined,
-                      transition: "background 0.15s ease",
-                    }}
-                  >
-                    {/* Checkbox for Comparison */}
-                    <td
-                      style={{ textAlign: "center", padding: "16px 12px" }}
-                      onClick={(e) => e.stopPropagation()}
+                  return (
+                    <tr
+                      key={r.candidate_id}
+                      onClick={() => setSelected(r)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelected(r);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Candidate ranked #${currentRank}, score ${r.custom_score.toFixed(1)}. Select to view evaluation report.`}
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: "1px solid var(--color-linen, #EBEAEA)",
+                        background: isSelectedForCompare ? "var(--accent-soft, #EEEBFA)" : undefined,
+                        transition: "background 0.15s ease",
+                      }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isSelectedForCompare}
-                        onChange={(e) => toggleCompare(r.candidate_id, e)}
-                        title="Select candidate for side-by-side comparison"
-                        style={{
-                          width: "18px",
-                          height: "18px",
-                          cursor: "pointer",
-                          accentColor: "var(--primary-1, #4729A3)",
-                        }}
-                      />
-                    </td>
+                      {/* Checkbox for Comparison */}
+                      <td
+                        style={{ textAlign: "center", padding: "16px 12px" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelectedForCompare}
+                          onChange={(e) => toggleCompare(r.candidate_id, e)}
+                          title="Select candidate for side-by-side comparison"
+                          style={{
+                            width: "18px",
+                            height: "18px",
+                            cursor: "pointer",
+                            accentColor: "var(--primary-1, #4729A3)",
+                          }}
+                        />
+                      </td>
 
-                    {/* Rank with Delta Indicator */}
-                    <td style={{ padding: "16px", textAlign: "left" }}>
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                        <strong style={{ fontSize: "1.05rem", fontVariantNumeric: "tabular-nums", color: "var(--ink, #150202)" }}>
-                          #{currentRank}
-                        </strong>
+                      {/* Rank with Delta Indicator */}
+                      <td style={{ padding: "16px", textAlign: "left" }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                          <strong style={{ fontSize: "1.05rem", fontVariantNumeric: "tabular-nums", color: "var(--ink, #150202)" }}>
+                            #{currentRank}
+                          </strong>
+                          {isCustomWeightsActive && (
+                            <span
+                              title={
+                                rankDelta > 0
+                                  ? `Rank improved by ${rankDelta} under custom weights (originally #${baseRank})`
+                                  : rankDelta < 0
+                                  ? `Rank decreased by ${Math.abs(rankDelta)} under custom weights (originally #${baseRank})`
+                                  : `Rank unchanged (originally #${baseRank})`
+                              }
+                              style={{
+                                fontSize: "0.78rem",
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "4px",
+                                background:
+                                  rankDelta > 0
+                                    ? "var(--good-soft, #E8F5E9)"
+                                    : rankDelta < 0
+                                    ? "var(--bad-soft, #FDE8E8)"
+                                    : "var(--color-linen, #EBEAEA)",
+                                color:
+                                  rankDelta > 0
+                                    ? "var(--color-liberty-green, #198754)"
+                                    : rankDelta < 0
+                                    ? "var(--color-coral-red, #DC3545)"
+                                    : "var(--muted, #606060)",
+                                fontVariantNumeric: "tabular-nums",
+                              }}
+                            >
+                              {rankDelta > 0 ? `+${rankDelta}` : rankDelta < 0 ? `${rankDelta}` : "0"}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Candidate File & Skills Overview */}
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ fontWeight: 650, color: "var(--ink, #150202)", fontSize: "0.98rem", wordBreak: "break-all" }}>
+                          {r.filename || `Candidate ${r.candidate_id.slice(0, 8)}`}
+                        </div>
+                        <div style={{ fontSize: "0.86rem", color: "var(--muted, #606060)", marginTop: "4px" }}>
+                          {r.matching_skills.length} verified rubric skills &bull; {r.missing_skills.length} gaps
+                        </div>
+                      </td>
+
+                      {/* Composite Score */}
+                      <td style={{ padding: "16px", textAlign: "right" }}>
+                        <div style={{ fontWeight: 800, fontSize: "1.25rem", color: "var(--primary-1, #4729A3)", fontVariantNumeric: "tabular-nums" }}>
+                          {r.custom_score.toFixed(1)}
+                        </div>
                         {isCustomWeightsActive && (
-                          <span
-                            title={
-                              rankDelta > 0
-                                ? `Rank improved by ${rankDelta} under custom weights (originally #${baseRank})`
-                                : rankDelta < 0
-                                ? `Rank decreased by ${Math.abs(rankDelta)} under custom weights (originally #${baseRank})`
-                                : `Rank unchanged (originally #${baseRank})`
-                            }
-                            style={{
-                              fontSize: "0.78rem",
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: "4px",
-                              background:
-                                rankDelta > 0
-                                  ? "var(--good-soft, #E8F5E9)"
-                                  : rankDelta < 0
-                                  ? "var(--bad-soft, #FDE8E8)"
-                                  : "var(--color-linen, #EBEAEA)",
-                              color:
-                                rankDelta > 0
-                                  ? "var(--color-liberty-green, #198754)"
-                                  : rankDelta < 0
-                                  ? "var(--color-coral-red, #DC3545)"
-                                  : "var(--muted, #606060)",
-                              fontVariantNumeric: "tabular-nums",
-                            }}
-                          >
-                            {rankDelta > 0 ? `+${rankDelta}` : rankDelta < 0 ? `${rankDelta}` : "0"}
-                          </span>
+                          <div style={{ fontSize: "0.8rem", color: "var(--muted, #606060)", fontVariantNumeric: "tabular-nums" }}>
+                            base: {r.overall_score.toFixed(1)}
+                          </div>
                         )}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Candidate File & Skills Overview */}
-                    <td style={{ padding: "16px" }}>
-                      <div style={{ fontWeight: 650, color: "var(--ink, #150202)", fontSize: "0.98rem", wordBreak: "break-all" }}>
-                        {r.filename || `Candidate ${r.candidate_id.slice(0, 8)}`}
-                      </div>
-                      <div style={{ fontSize: "0.86rem", color: "var(--muted, #606060)", marginTop: "4px" }}>
-                        {r.matching_skills.length} verified rubric skills &bull; {r.missing_skills.length} gaps
-                      </div>
-                    </td>
+                      {/* Skill Match */}
+                      <td style={{ padding: "16px", textAlign: "right" }}>
+                        <span style={{ fontWeight: 650, fontSize: "0.95rem", fontVariantNumeric: "tabular-nums" }}>
+                          {r.skill_match_score.toFixed(1)}%
+                        </span>
+                      </td>
 
-                    {/* Composite Score */}
-                    <td style={{ padding: "16px", textAlign: "right" }}>
-                      <div style={{ fontWeight: 800, fontSize: "1.25rem", color: "var(--primary-1, #4729A3)", fontVariantNumeric: "tabular-nums" }}>
+                      {/* Experience */}
+                      <td style={{ padding: "16px", textAlign: "right" }}>
+                        <span style={{ fontWeight: 650, fontSize: "0.95rem", fontVariantNumeric: "tabular-nums" }}>
+                          {r.work_experience_score.toFixed(1)}%
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: "16px", textAlign: "center" }}>
+                        <span className="status-chip" style={{ fontSize: "0.8rem", padding: "3px 10px", borderRadius: "99px", background: "var(--good-soft, #E8F5E9)", color: "var(--color-liberty-green, #198754)", border: "1px solid var(--color-liberty-green, #198754)", fontWeight: 650 }}>
+                          {r.status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: "16px", textAlign: "right", whiteSpace: "nowrap" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            color: "var(--color-blue, #0D6EFD)",
+                            fontWeight: 650,
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          <span>View Details</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                          </svg>
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Candidate Cards View (Clutter-Free, Touch-Friendly) */}
+          <div className="leaderboard-mobile-cards">
+            {completed.map((r, i) => {
+              const currentRank = i + 1;
+              const baseRank = baselineRanks.get(r.candidate_id) || currentRank;
+              const rankDelta = baseRank - currentRank;
+              const isSelectedForCompare = selectedForCompare.includes(r.candidate_id);
+
+              return (
+                <div
+                  key={r.candidate_id}
+                  className={`candidate-card ${isSelectedForCompare ? "candidate-card--selected" : ""}`}
+                  onClick={() => setSelected(r)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Candidate ranked #${currentRank}, score ${r.custom_score.toFixed(1)}. Tap to view full evaluation report.`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(r);
+                    }
+                  }}
+                >
+                  <div className="candidate-card__top">
+                    <div className="candidate-card__rank-wrap">
+                      <label
+                        className="candidate-card__checkbox-label"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelectedForCompare}
+                          onChange={(e) => toggleCompare(r.candidate_id, e)}
+                          className="candidate-card__checkbox"
+                          aria-label={`Select candidate #${currentRank} for comparison`}
+                        />
+                      </label>
+                      <span className="candidate-card__rank-badge">
+                        #{currentRank}
+                      </span>
+                      {isCustomWeightsActive && rankDelta !== 0 && (
+                        <span className={`candidate-card__delta ${rankDelta > 0 ? "delta-up" : "delta-down"}`}>
+                          {rankDelta > 0 ? `+${rankDelta}` : rankDelta}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="candidate-card__score-wrap">
+                      <div className="candidate-card__score-val">
                         {r.custom_score.toFixed(1)}
                       </div>
-                      {isCustomWeightsActive && (
-                        <div style={{ fontSize: "0.8rem", color: "var(--muted, #606060)", fontVariantNumeric: "tabular-nums" }}>
-                          base: {r.overall_score.toFixed(1)}
+                      <span className="candidate-card__score-label">
+                        {isCustomWeightsActive ? "What-If" : "Score"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="candidate-card__body">
+                    <h3 className="candidate-card__name">
+                      {r.filename || `Candidate ${r.candidate_id.slice(0, 8)}`}
+                    </h3>
+                    <p className="candidate-card__skills-summary">
+                      <span className="skills-match-text">{r.matching_skills.length} verified skills</span>
+                      <span className="skills-dot">&bull;</span>
+                      <span className="skills-gap-text">{r.missing_skills.length} gaps</span>
+                    </p>
+
+                    <div className="candidate-card__metrics">
+                      <div className="metric-row">
+                        <div className="metric-header">
+                          <span className="metric-name">Skill Match</span>
+                          <strong className="metric-val">{r.skill_match_score.toFixed(1)}%</strong>
                         </div>
-                      )}
-                    </td>
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill metric-fill--skill"
+                            style={{ width: `${Math.min(100, Math.max(0, r.skill_match_score))}%` }}
+                          />
+                        </div>
+                      </div>
 
-                    {/* Skill Match */}
-                    <td style={{ padding: "16px", textAlign: "right" }}>
-                      <span style={{ fontWeight: 650, fontSize: "0.95rem", fontVariantNumeric: "tabular-nums" }}>
-                        {r.skill_match_score.toFixed(1)}%
-                      </span>
-                    </td>
+                      <div className="metric-row">
+                        <div className="metric-header">
+                          <span className="metric-name">Experience</span>
+                          <strong className="metric-val">{r.work_experience_score.toFixed(1)}%</strong>
+                        </div>
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill metric-fill--exp"
+                            style={{ width: `${Math.min(100, Math.max(0, r.work_experience_score))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Experience */}
-                    <td style={{ padding: "16px", textAlign: "right" }}>
-                      <span style={{ fontWeight: 650, fontSize: "0.95rem", fontVariantNumeric: "tabular-nums" }}>
-                        {r.work_experience_score.toFixed(1)}%
-                      </span>
-                    </td>
-
-                    {/* Status */}
-                    <td style={{ padding: "16px", textAlign: "center" }}>
-                      <span className="status-chip" style={{ fontSize: "0.8rem", padding: "3px 10px", borderRadius: "99px", background: "var(--good-soft, #E8F5E9)", color: "var(--color-liberty-green, #198754)", border: "1px solid var(--color-liberty-green, #198754)", fontWeight: 650 }}>
-                        {r.status}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td style={{ padding: "16px", textAlign: "right", whiteSpace: "nowrap" }}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          color: "var(--color-blue, #0D6EFD)",
-                          fontWeight: 650,
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        <span>View Details</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  <div className="candidate-card__footer">
+                    <span className="status-chip" style={{ fontSize: "0.78rem", padding: "2px 8px", background: "var(--good-soft, #E8F5E9)", color: "var(--color-liberty-green, #198754)", border: "1px solid var(--color-liberty-green, #198754)", borderRadius: "99px", fontWeight: 650 }}>
+                      {r.status}
+                    </span>
+                    <span className="candidate-card__cta-btn">
+                      <span>Inspect Details</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* ── Pre-filtered Notice ────────────────────────────────────────────── */}
@@ -748,28 +862,9 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
 
       {/* ── Comparison Floating Dock (Clean B2B Action Bar) ────────────────── */}
       {selectedForCompare.length > 0 && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "28px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 900,
-            width: "min(92%, 760px)",
-            padding: "14px 22px",
-            background: "var(--surface, #FFFFFF)",
-            border: "1.5px solid var(--primary-1, #4729A3)",
-            borderRadius: "14px",
-            boxShadow: "var(--shadow-lg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "14px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: "0.94rem", color: "var(--ink, #150202)" }}>
+        <div className="compare-floating-bar">
+          <div className="compare-bar__chips">
+            <span style={{ fontWeight: 700, fontSize: "0.94rem", color: "var(--ink, #150202)", whiteSpace: "nowrap" }}>
               Comparing ({selectedForCompare.length}/3):
             </span>
             {candidatesToCompare.map((c) => (
@@ -786,6 +881,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   alignItems: "center",
                   gap: "6px",
                   fontWeight: 650,
+                  flexShrink: 0,
                 }}
               >
                 <span>{c.filename ? c.filename.slice(0, 18) : c.candidate_id.slice(0, 6)}</span>
@@ -812,7 +908,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             ))}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className="compare-bar__actions">
             <button
               type="button"
               onClick={clearCompare}
@@ -842,7 +938,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 cursor: selectedForCompare.length >= 2 ? "pointer" : "not-allowed",
               }}
             >
-              {selectedForCompare.length < 2 ? "Select 1 More to Compare" : "Compare Candidates"}
+              {selectedForCompare.length < 2 ? "Select 1 More" : "Compare Candidates"}
             </button>
           </div>
         </div>
@@ -852,34 +948,13 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
       {selected && (
         <div
           className="modal-backdrop"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(21, 2, 2, 0.70)",
-            backdropFilter: "blur(4px)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
-          }}
           onClick={() => setSelected(null)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-eval-title"
         >
           <div
-            style={{
-              background: "var(--surface, #FFFFFF)",
-              border: "1px solid var(--color-grey-1, #C6C6C6)",
-              borderRadius: "14px",
-              width: "min(100%, 720px)",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              padding: "36px 40px",
-              boxShadow: "var(--shadow-lg)",
-              color: "var(--ink, #150202)",
-            }}
+            className="modal-responsive-card"
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid var(--color-linen, #EBEAEA)", paddingBottom: "16px" }}>
@@ -887,7 +962,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                 <p className="eyebrow" style={{ marginBottom: "4px", fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted, #606060)", fontWeight: 700 }}>
                   Candidate Evaluation Report
                 </p>
-                <h2 id="modal-eval-title" style={{ margin: 0, fontSize: "1.45rem", fontWeight: 700, color: "var(--ink, #150202)" }}>
+                <h2 id="modal-eval-title" style={{ margin: 0, fontSize: "1.45rem", fontWeight: 700, color: "var(--ink, #150202)", wordBreak: "break-all" }}>
                   {selected.filename || `Candidate ID: ${selected.candidate_id.slice(0, 8)}`}
                 </h2>
               </div>
@@ -906,6 +981,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
                   border: "1px solid var(--color-grey-1, #C6C6C6)",
                   background: "var(--surface-soft, #FAFAFA)",
                   cursor: "pointer",
+                  flexShrink: 0,
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -917,18 +993,7 @@ export function Leaderboard({ batchId }: LeaderboardProps) {
             </div>
 
             {/* Score Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "16px",
-                margin: "20px 0 26px",
-                background: "var(--surface-soft, #FAFAFA)",
-                padding: "20px 22px",
-                borderRadius: "12px",
-                border: "1px solid var(--color-linen, #EBEAEA)",
-              }}
-            >
+            <div className="modal-score-grid">
               <div>
                 <span style={{ fontSize: "0.85rem", color: "var(--muted, #606060)", fontWeight: 600 }}>Overall Rating</span>
                 <strong style={{ display: "block", fontSize: "1.75rem", color: "var(--primary-1, #4729A3)", fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>

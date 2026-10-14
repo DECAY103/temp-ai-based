@@ -38,6 +38,14 @@ export function BackendStatus() {
     error: "Backend Offline",
   };
 
+  const statusShortLabels: Record<string, string> = {
+    checking: "Pinging…",
+    ok: "Live",
+    waking: "Waking…",
+    degraded: "Degraded",
+    error: "Offline",
+  };
+
   const statusColors: Record<string, string> = {
     checking: "var(--accent)",
     ok: "var(--color-liberty-green, #198754)", // Liberty Green
@@ -59,7 +67,8 @@ export function BackendStatus() {
           className="backend-status-dot"
           style={{ backgroundColor: statusColors[statusType] }}
         />
-        <span className="backend-status-label">{statusLabels[statusType]}</span>
+        <span className="backend-status-label backend-status-label--full">{statusLabels[statusType]}</span>
+        <span className="backend-status-label backend-status-label--short">{statusShortLabels[statusType]}</span>
         <svg
           className={`backend-status-chevron ${isOpen ? "open" : ""}`}
           width="12"

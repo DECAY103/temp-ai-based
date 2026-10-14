@@ -78,16 +78,32 @@ export function SiteHeader() {
     }
   };
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileNavOpen]);
+
   return (
     <>
       <header className="site-header">
         <div className="site-header__inner">
           <a className="brand" href="/">
-            <span className="brand-mark">RS</span>Resume Screening
+            <span className="brand-mark" aria-hidden="true">RS</span>
+            <span className="brand-title">Resume Screening</span>
           </a>
           <div className="header-actions">
             <BackendStatus />
-            <nav className="site-nav" aria-label="Primary navigation">
+            <nav className="site-nav site-nav--desktop" aria-label="Primary navigation">
               {isLoggedIn ? (
                 <>
                   {(role === "admin" || pathname.startsWith("/admin")) && (
@@ -149,8 +165,149 @@ export function SiteHeader() {
                 <a href="/auth/login">Sign in</a>
               )}
             </nav>
+
+            <button
+              type="button"
+              className="mobile-nav-toggle"
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-nav-drawer"
+              onClick={() => setMobileNavOpen((prev) => !prev)}
+            >
+              {mobileNavOpen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileNavOpen && (
+          <>
+            <div
+              className="mobile-nav-backdrop"
+              onClick={() => setMobileNavOpen(false)}
+              aria-hidden="true"
+            />
+            <div id="mobile-nav-drawer" className="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+              {isLoggedIn ? (
+                <div className="mobile-nav-content">
+                  <div className="mobile-nav-user-info">
+                    <span className="mobile-user-role-badge">
+                      Signed in as <strong>{role || "User"}</strong>
+                    </span>
+                  </div>
+                  <div className="mobile-nav-links">
+                    {(role === "admin" || pathname.startsWith("/admin")) && (
+                      <a
+                        href="/admin"
+                        className={`mobile-nav-link ${pathname.startsWith("/admin") ? "mobile-nav-link--active" : ""}`}
+                        onClick={() => setMobileNavOpen(false)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect width="18" height="18" x="3" y="3" rx="2" />
+                          <path d="M3 9h18" />
+                          <path d="M9 21V9" />
+                        </svg>
+                        <span>Audit Logs & Admin</span>
+                      </a>
+                    )}
+                    {role === "recruiter" && (
+                      <a
+                        href="/recruiter"
+                        className={`mobile-nav-link ${pathname === "/recruiter" ? "mobile-nav-link--active" : ""}`}
+                        onClick={() => setMobileNavOpen(false)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span>Recruiter Dashboard</span>
+                      </a>
+                    )}
+                    {role === "candidate" && (
+                      <a
+                        href="/candidate"
+                        className={`mobile-nav-link ${pathname === "/candidate" ? "mobile-nav-link--active" : ""}`}
+                        onClick={() => setMobileNavOpen(false)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <span>Candidate Portal</span>
+                      </a>
+                    )}
+                  </div>
+                  <div className="mobile-nav-divider" />
+                  <div className="mobile-nav-actions">
+                    <button
+                      type="button"
+                      className="mobile-nav-btn mobile-nav-btn--signout"
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        handleSignOut();
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      <span>Sign out</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="mobile-nav-btn mobile-nav-btn--delete"
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        setShowDeleteModal(true);
+                        setDeleteError(null);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      </svg>
+                      <span>Delete account</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mobile-nav-content">
+                  <a
+                    href="/auth/login"
+                    className="primary"
+                    style={{
+                      width: "100%",
+                      textAlign: "center",
+                      padding: "12px 20px",
+                      borderRadius: "8px",
+                      fontWeight: 650,
+                      textDecoration: "none",
+                      display: "block",
+                    }}
+                    onClick={() => setMobileNavOpen(false)}
+                  >
+                    Sign in to Portal
+                  </a>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </header>
 
       {/* ── Self-Service Delete Account Modal ─────────────────────────────────── */}

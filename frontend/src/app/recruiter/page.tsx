@@ -119,40 +119,25 @@ export default function RecruiterPage() {
             </p>
           </div>
 
-          <div style={{ display: "grid", gap: "14px" }}>
+          <div className="recruiter-jobs-grid">
             {jobs.map((job) => (
-              <div
-                key={job.batch_id}
-                style={{
-                  background: "var(--surface, #ffffff)",
-                  border: "1px solid var(--line, #EBEAEA)",
-                  borderRadius: "12px",
-                  padding: "16px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                  boxShadow: "var(--shadow-sm)",
-                }}
-              >
-                <div style={{ minWidth: "220px", flex: "1 1 300px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                    <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>{job.title || "Job Rubric Batch"}</h3>
-                    <span className="status-chip" style={{ fontSize: "0.78rem", padding: "3px 10px" }}>{job.status}</span>
+              <div key={job.batch_id} className="recruiter-job-card">
+                <div className="job-card__info">
+                  <div className="job-card__header">
+                    <h3 className="job-card__title">{job.title || "Job Rubric Batch"}</h3>
+                    <span className="status-chip">{job.status}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", fontSize: "0.88rem", color: "var(--muted, #606060)" }}>
+                  <div className="job-card__meta">
                     <span>{job.candidate_count > 0 ? `${job.candidate_count} candidates evaluated` : `${job.total_files} file(s)`}</span>
                     {job.created_at && <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>}
-                    <span>ID: <code style={{ fontSize: "0.84rem" }}>{job.batch_id.slice(0, 8)}…</code></span>
+                    <span className="job-card__batch-id">ID: <code>{job.batch_id.slice(0, 8)}…</code></span>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <div className="job-card__actions">
                   <button
                     type="button"
-                    className="ghost"
-                    style={{ fontSize: "0.86rem", padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--color-grey-1, #C6C6C6)", fontWeight: 600, cursor: "pointer" }}
+                    className="ghost job-card__btn-copy"
                     onClick={() => copyBatchId(job.batch_id)}
                     title="Copy raw Batch ID"
                   >
@@ -160,8 +145,7 @@ export default function RecruiterPage() {
                   </button>
                   <button
                     type="button"
-                    className="ghost"
-                    style={{ fontSize: "0.86rem", padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--color-grey-1, #C6C6C6)", fontWeight: 600, cursor: "pointer" }}
+                    className="ghost job-card__btn-copy"
                     onClick={() => copyCandidateLink(job.batch_id)}
                     title="Copy direct application link with pre-filled batch ID for candidates"
                   >
@@ -169,8 +153,7 @@ export default function RecruiterPage() {
                   </button>
                   <Link
                     href={`/recruiter/leaderboard?batch_id=${job.batch_id}`}
-                    className="primary"
-                    style={{ fontSize: "0.88rem", padding: "8px 18px", textDecoration: "none", borderRadius: "8px", fontWeight: 650, display: "inline-flex", alignItems: "center", gap: "6px" }}
+                    className="primary job-card__btn-cta"
                   >
                     <span>View Leaderboard</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

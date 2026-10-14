@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -8,6 +8,13 @@ const notoSans = Noto_Sans({
   display: "swap",
   variable: "--font-noto-sans",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#4729A3",
+};
 
 export const metadata: Metadata = {
   title: "AI-based Resume Screening",

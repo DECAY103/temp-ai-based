@@ -116,31 +116,10 @@ export function CandidateComparisonModal({
     >
       <div
         className="comparison-card"
-        style={{
-          background: "var(--surface, #FFFFFF)",
-          border: "1px solid var(--color-grey-1, #C6C6C6)",
-          borderRadius: "14px",
-          width: "min(100%, 1060px)",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          padding: "36px 40px",
-          boxShadow: "var(--shadow-lg)",
-          color: "var(--ink, #150202)",
-        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: "24px",
-            borderBottom: "1px solid var(--color-linen, #EBEAEA)",
-            paddingBottom: "20px",
-            marginBottom: "30px",
-          }}
-        >
+        <div className="comparison-header">
           <div>
             <h2
               id="comparison-modal-title"
@@ -195,12 +174,8 @@ export function CandidateComparisonModal({
 
         {/* Candidate Profile Cards Grid */}
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-            gap: "20px",
-            marginBottom: "32px",
-          }}
+          className="comparison-grid"
+          style={{ "--cols": candidates.length, marginBottom: "32px" } as React.CSSProperties}
         >
           {candidates.map((c, i) => {
             const isLeader = c.overall_score === highestOverall;
@@ -332,11 +307,8 @@ export function CandidateComparisonModal({
               <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Rubric Keyword Alignment</span>
             </div>
             <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "20px",
-              }}
+              className="comparison-grid"
+              style={{ "--cols": candidates.length } as React.CSSProperties}
             >
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
@@ -368,11 +340,8 @@ export function CandidateComparisonModal({
               <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Tenure & Seniority Match</span>
             </div>
             <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "20px",
-              }}
+              className="comparison-grid"
+              style={{ "--cols": candidates.length } as React.CSSProperties}
             >
               {candidates.map((c, i) => (
                 <div key={c.candidate_id}>
@@ -404,11 +373,8 @@ export function CandidateComparisonModal({
               <span style={{ fontSize: "0.86rem", color: "var(--muted, #606060)" }}>Stage-1 Vector Cosine Similarity</span>
             </div>
             <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-                gap: "20px",
-              }}
+              className="comparison-grid"
+              style={{ "--cols": candidates.length } as React.CSSProperties}
             >
               {candidates.map((c, i) => {
                 const simPct = c.cosine_similarity_score * 100;
@@ -532,11 +498,8 @@ export function CandidateComparisonModal({
 
           {/* Unique & Missing Skills per Candidate */}
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-              gap: "20px",
-            }}
+            className="comparison-grid"
+            style={{ "--cols": candidates.length } as React.CSSProperties}
           >
             {candidates.map((c, i) => {
               const uniqueList = skillAnalysis ? skillAnalysis.uniqueSkills[i] : [];
@@ -627,11 +590,8 @@ export function CandidateComparisonModal({
             Evaluator Verdict Summaries
           </h4>
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${candidates.length}, minmax(0, 1fr))`,
-              gap: "20px",
-            }}
+            className="comparison-grid"
+            style={{ "--cols": candidates.length } as React.CSSProperties}
           >
             {candidates.map((c, i) => (
               <div
@@ -656,7 +616,7 @@ export function CandidateComparisonModal({
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "20px", borderTop: "1px solid var(--color-linen, #EBEAEA)" }}>
+        <div className="comparison-footer">
           <button
             type="button"
             className="primary"
