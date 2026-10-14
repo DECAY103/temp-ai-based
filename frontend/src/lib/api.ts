@@ -307,7 +307,53 @@ export const adminApi = {
       body: JSON.stringify(params || {}),
     }),
 
-  getUserReportUrl: (userId: string) => `${getBaseUrl()}/admin/users/${userId}/report-pdf`,
+  getUserReportUrl: (userId: string) => {
+    const base = `${getBaseUrl()}/admin/users/${userId}/report-pdf`;
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("access_token");
+      if (token) return `${base}?token=${encodeURIComponent(token)}`;
+    }
+    return base;
+  },
+
+  downloadUserReportPdf: async (userId: string, email: string): Promise<void> => {
+    const base = getBaseUrl();
+    const headers = new Headers();
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("access_token");
+      if (storedToken) {
+        headers.set("Authorization", `Bearer ${storedToken}`);
+      }
+    }
+
+    const res = await fetch(`${base}/admin/users/${userId}/report-pdf`, {
+      method: "GET",
+      headers,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      let errMsg = `Failed to generate PDF (HTTP ${res.status})`;
+      try {
+        const json = await res.json();
+        if (json.detail) errMsg = typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail);
+      } catch {
+        // ignore
+      }
+      throw new Error(errMsg);
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const cleanEmail = (email || "user").split("@")[0].replace(/[^a-zA-Z0-9_-]/g, "_");
+    a.download = `forensic_report_${cleanEmail}_${userId.slice(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+  },
 };
 
 // ─── Candidates API (M.1 / M.3) ──────────────────────────────────────────────

@@ -41,6 +41,21 @@ export default function AdminPage() {
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
 
+  // PDF Export state
+  const [exportingUserId, setExportingUserId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (userId: string, email: string) => {
+    setExportingUserId(userId);
+    setError(null);
+    try {
+      await adminApi.downloadUserReportPdf(userId, email);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to generate forensic PDF report");
+    } finally {
+      setExportingUserId(null);
+    }
+  };
+
   // Load initial data
   const fetchData = async () => {
     setLoading(true);
@@ -380,14 +395,15 @@ export default function AdminPage() {
                             >
                               View Logs
                             </button>
-                            <a
-                              href={adminApi.getUserReportUrl(u.id)}
+                            <button
+                              type="button"
                               className="admin-btn-action admin-btn-export"
-                              download
+                              onClick={() => void handleDownloadPdf(u.id, u.email)}
+                              disabled={exportingUserId === u.id}
                               title="Export official forensic enquiry PDF report"
                             >
-                              Export PDF
-                            </a>
+                              {exportingUserId === u.id ? "Exporting…" : "Export PDF"}
+                            </button>
                             <button
                               type="button"
                               className="admin-btn-action"
@@ -663,13 +679,14 @@ export default function AdminPage() {
             </div>
 
             <div className="admin-modal-footer">
-              <a
-                href={adminApi.getUserReportUrl(inspectedUser.id)}
+              <button
+                type="button"
                 className="admin-btn-action admin-btn-export"
-                download
+                onClick={() => void handleDownloadPdf(inspectedUser.id, inspectedUser.email)}
+                disabled={exportingUserId === inspectedUser.id}
               >
-                Export PDF Report
-              </a>
+                {exportingUserId === inspectedUser.id ? "Exporting PDF…" : "Export PDF Report"}
+              </button>
               <button
                 type="button"
                 className="admin-btn-action admin-btn-view"

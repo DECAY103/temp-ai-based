@@ -82,3 +82,79 @@ def test_pdf_report_handles_empty_logs():
     assert "No activity logs recorded for this account." in text
     assert "No data transfers recorded for this account." in text
     doc.close()
+
+
+def test_pdf_report_handles_datetime_objects():
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+    dummy_user = {
+        "id": "33333333-4444-5555-6666-777777777777",
+        "email": "datetime_user@example.co.uk",
+        "role": "admin",
+        "created_at": now,
+        "last_login_at": now,
+    }
+    activity_logs = [
+        {"created_at": now, "action": "admin_audit", "detail": "Inspected user", "ip_address": "10.0.0.1"},
+    ]
+    transfer_logs = [
+        {"created_at": now, "transfer_type": "export", "filename": "test.pdf", "filesize_bytes": 2048, "status": "success"},
+    ]
+    pdf_bytes = generate_forensic_report(
+        user=dummy_user,
+        activity_logs=activity_logs,
+        transfer_logs=transfer_logs,
+        admin_email="superadmin@test.com",
+    )
+    assert isinstance(pdf_bytes, bytes)
+    assert pdf_bytes.startswith(b"%PDF-")
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_endpoint():
+    from httpx import AsyncClient, ASGITransport
+    from unittest.mock import patch, AsyncMock
+    from jose import jwt
+    from app.config import settings
+    from main import app
+
+    admin_token = jwt.encode(
+        {"sub": "admin-1", "email": "admin@example.com", "role": "admin"},
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    mock_user = {
+        "id": "target-1",
+        "email": "user@example.com",
+        "role": "candidate",
+        "created_at": "2026-10-01T00:00:00Z",
+        "last_login_at": None,
+    }
+
+    with patch("app.persistence.repository.is_token_revoked", new=AsyncMock(return_value=False)), \
+         patch("app.persistence.repository.get_user", new=AsyncMock(side_effect=lambda uid: mock_user if uid == "target-1" else {"id": "admin-1", "email": "admin@example.com", "role": "admin"})), \
+         patch("app.persistence.repository.get_user_tokens_revoked_before", new=AsyncMock(return_value=None)), \
+         patch("app.persistence.repository.get_activity_logs", new=AsyncMock(return_value=[])), \
+         patch("app.persistence.repository.get_transfer_logs", new=AsyncMock(return_value=[])), \
+         patch("app.persistence.repository.log_activity", new=AsyncMock()), \
+         patch("app.persistence.repository.log_transfer", new=AsyncMock()):
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            # Test 1: Header auth
+            res = await client.get(
+                "/api/admin/users/target-1/report-pdf",
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+            assert res.status_code == 200
+            assert res.headers["content-type"] == "application/pdf"
+            assert res.content.startswith(b"%PDF-")
+
+            # Test 2: Query param auth fallback
+            res2 = await client.get(
+                f"/api/admin/users/target-1/report-pdf?token={admin_token}",
+            )
+            assert res2.status_code == 200
+            assert res2.headers["content-type"] == "application/pdf"
+            assert res2.content.startswith(b"%PDF-")
+

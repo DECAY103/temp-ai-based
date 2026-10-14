@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, Query, status
 from jose import JWTError, jwt
 
 from datetime import datetime, timezone
@@ -23,10 +23,13 @@ class CurrentUser:
 async def current_user(
     authorization: str | None = Header(default=None),
     access_token: str | None = Cookie(default=None),
+    token_param: str | None = Query(default=None, alias="token"),
 ) -> CurrentUser:
     token = access_token
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization.split(" ", 1)[1]
+    elif token_param:
+        token = token_param
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
     try:

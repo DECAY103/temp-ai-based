@@ -37,7 +37,7 @@ async def get_user_by_email(email: str) -> Optional[dict]:
 async def get_user(user_id: str) -> Optional[dict]:
     pool = get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT id,email,password_hash,role,totp_secret,last_login_at FROM users WHERE id=$1::uuid", user_id)
+        row = await conn.fetchrow("SELECT id,email,password_hash,role,totp_secret,last_login_at,created_at FROM users WHERE id=$1::uuid", user_id)
     return dict(row) if row else None
 
 
@@ -216,7 +216,19 @@ async def get_activity_logs(user_id: str | None = None, limit: int = 50) -> list
                 "SELECT id,user_id,email,action,detail,ip_address,user_agent,created_at FROM activity_logs ORDER BY created_at DESC LIMIT $1",
                 limit,
             )
-    return [dict(r) for r in rows]
+    return [
+        {
+            "id": str(r["id"]),
+            "user_id": str(r["user_id"]) if r["user_id"] else None,
+            "email": r["email"],
+            "action": r["action"],
+            "detail": r["detail"],
+            "ip_address": r["ip_address"],
+            "user_agent": r["user_agent"],
+            "created_at": r["created_at"].isoformat() if r["created_at"] else "",
+        }
+        for r in rows
+    ]
 
 
 # ─── Password Reset Tokens ────────────────────────────────────────────────────

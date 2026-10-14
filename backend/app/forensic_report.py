@@ -12,7 +12,18 @@ Accessibility Note:
 from __future__ import annotations
 
 import datetime
+from typing import Any
 import pymupdf
+
+
+def _format_timestamp(val: Any) -> str:
+    """Safely format string, datetime, or None into a standardized UTC timestamp string."""
+    if val is None or val == "":
+        return "—"
+    if isinstance(val, (datetime.datetime, datetime.date)):
+        return val.strftime("%Y-%m-%d %H:%M:%S")
+    s = str(val).strip()
+    return s[:19] if len(s) >= 19 else s
 
 
 def generate_forensic_report(
@@ -66,11 +77,12 @@ def generate_forensic_report(
     page.draw_rect(pymupdf.Rect(40, 110, 555, 200), fill=c_bg_box, color=c_line)
     page.insert_text((55, 128), "SUBJECT USER RECORD", fontsize=10, fontname="helv", color=c_brand)
 
-    email = user.get("email", "Unknown")
-    user_id = str(user.get("id", "Unknown"))
-    role = user.get("role", "Unknown").upper()
-    created_at = user.get("created_at", "Unknown")
-    last_login = user.get("last_login_at") or "None (Never logged in)"
+    email = str(user.get("email") or "Unknown")
+    user_id = str(user.get("id") or "Unknown")
+    role = str(user.get("role") or "Unknown").upper()
+    created_at = _format_timestamp(user.get("created_at"))
+    last_login_raw = user.get("last_login_at")
+    last_login = _format_timestamp(last_login_raw) if last_login_raw else "None (Never logged in)"
 
     page.insert_text((55, 146), f"Email Address: {email}", fontsize=9, fontname="helv", color=c_dark)
     page.insert_text((55, 160), f"User ID: {user_id}", fontsize=9, fontname="helv", color=c_dark)
@@ -104,10 +116,10 @@ def generate_forensic_report(
             if y > 760:
                 page = doc.new_page(width=595, height=842)
                 y = 50
-            ts = log.get("created_at", "")[:19]
-            action = log.get("action", "")
-            detail = (log.get("detail") or "—")[:35]
-            ip = log.get("ip_address") or "—"
+            ts = _format_timestamp(log.get("created_at"))
+            action = str(log.get("action") or "")
+            detail = str(log.get("detail") or "—")[:35]
+            ip = str(log.get("ip_address") or "—")
 
             page.insert_text((45, y), ts, fontsize=7.5, fontname="helv", color=c_dark)
             page.insert_text((155, y), action[:20], fontsize=7.5, fontname="helv", color=c_brand)
@@ -141,10 +153,10 @@ def generate_forensic_report(
             if y > 760:
                 page = doc.new_page(width=595, height=842)
                 y = 50
-            ts = t.get("created_at", "")[:19]
-            tt = t.get("transfer_type", "")
-            fn = (t.get("filename") or "—")[:30]
-            st = t.get("status", "success")
+            ts = _format_timestamp(t.get("created_at"))
+            tt = str(t.get("transfer_type") or "")
+            fn = str(t.get("filename") or "—")[:30]
+            st = str(t.get("status") or "success")
             size = f"{round((t.get('filesize_bytes') or 0)/1024, 1)} KB" if t.get("filesize_bytes") else ""
 
             page.insert_text((45, y), ts, fontsize=7.5, fontname="helv", color=c_dark)
