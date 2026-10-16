@@ -155,7 +155,6 @@ export function SiteHeader() {
               </>
             )}
             <BackendStatus />
-          </div>
 
             <button
               type="button"
