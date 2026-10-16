@@ -108,71 +108,54 @@ export function SiteHeader() {
             <span className="brand-mark" aria-hidden="true">RS</span>
             <span className="brand-title">Resume Screening</span>
           </a>
+          <nav className="site-nav site-nav--desktop" aria-label="Primary navigation">
+            <a href="/#features-heading">Features</a>
+            <a href="/candidate">Candidate Portal</a>
+            {isLoggedIn && role === "recruiter" && (
+              <a href="/recruiter">Recruiter Portal</a>
+            )}
+            {isLoggedIn && role === "admin" && (
+              <a href="/admin">Audit Logs</a>
+            )}
+          </nav>
+
           <div className="header-actions">
+            {isLoggedIn ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="site-nav-btn"
+                >
+                  Sign out
+                </button>
+                <a
+                  href={role === "admin" ? "/admin" : role === "candidate" ? "/candidate" : "/recruiter"}
+                  className="header-pill-btn"
+                >
+                  <span>Portal</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/auth/login" className="site-nav-link-login">
+                  Sign in
+                </a>
+                <a href="/auth/login" className="header-pill-btn">
+                  <span>Get Started</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </a>
+              </>
+            )}
             <BackendStatus />
-            <nav className="site-nav site-nav--desktop" aria-label="Primary navigation">
-              {isLoggedIn ? (
-                <>
-                  {(role === "admin" || pathname.startsWith("/admin")) && (
-                    <a
-                      href="/admin"
-                      style={{
-                        fontWeight: pathname.startsWith("/admin") ? 700 : 500,
-                        color: pathname.startsWith("/admin") ? "var(--accent)" : "inherit",
-                      }}
-                    >
-                      Audit Logs
-                    </a>
-                  )}
-                  {role === "recruiter" && !pathname.startsWith("/admin") && (
-                    <a href="/recruiter">Recruiter Portal</a>
-                  )}
-                  {role === "candidate" && !pathname.startsWith("/admin") && (
-                    <a href="/candidate">Candidate Portal</a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--muted)",
-                      fontSize: "0.86rem",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                    className="site-nav-btn"
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-blue, #0D6EFD)")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--muted)")}
-                  >
-                    Sign out
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowDeleteModal(true);
-                      setDeleteError(null);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--color-coral-red, #29136C)",
-                      fontSize: "0.86rem",
-                      cursor: "pointer",
-                      padding: 0,
-                      opacity: 0.85,
-                    }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.85")}
-                    title="Permanently delete your account"
-                  >
-                    Delete account
-                  </button>
-                </>
-              ) : (
-                <a href="/auth/login">Sign in</a>
-              )}
-            </nav>
+          </div>
 
             <button
               type="button"

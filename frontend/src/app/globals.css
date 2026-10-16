@@ -15,12 +15,12 @@
   --primary-3:            #BDADEB; /* Light Purple */
   --primary-4:            #EEEBFA; /* Pale Lavender */
 
-  /* Surface & Canvas (White Page Background Preserved) */
-  --canvas:               #FFFFFF; /* White page background preserved */
-  --surface:              #FFFFFF; /* White component surfaces */
-  --surface-soft:         #EEEBFA; /* Pale Lavender: light tinted surfaces */
-  --surface-linen:        #EEEBFA; /* Pale Lavender: subtle highlight surfaces */
-  --surface-hover:        #EEEBFA; /* Pale Lavender: hover backgrounds */
+  /* Surface & Canvas (Pale Lavender Canvas matching reference aesthetic) */
+  --canvas:               #EEEBFA; /* Soothing Pale Lavender page background */
+  --surface:              #FFFFFF; /* Pure White component surfaces */
+  --surface-soft:         #FFFFFF; /* White card surfaces on lavender canvas */
+  --surface-linen:        #F4F1FD; /* Soft Lavender highlight surfaces */
+  --surface-hover:        #F4F1FD; /* Hover surfaces */
 
   /* Functional Color Mapping (Strictly Purple & White) */
   --color-linen:          #EEEBFA; /* Pale Lavender */
@@ -80,8 +80,7 @@
 html { background: var(--canvas); scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: linear-gradient(180deg, #F8F6FE 0%, #EEEBFA 180px, #FAF8FE 480px, #FFFFFF 950px);
-  background-attachment: fixed;
+  background: var(--canvas);
   color: var(--ink);
   font-family: 'Noto Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -245,41 +244,75 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Site Header ────────────────────────────────────────────────────────── */
+/* ─── Floating Pill Island Header (Matching Reference Design) ────────── */
 .site-header {
-  height: 64px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255,255,255,.96);
-  backdrop-filter: blur(8px);
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: 18px;
+  z-index: 100;
+  padding: 0 20px;
+  pointer-events: none;
 }
 .site-header__inner {
+  pointer-events: auto;
   display: flex;
-  max-width: 1120px;
-  height: 100%;
+  max-width: 1040px;
+  min-height: 58px;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 6px 12px 6px 22px;
+  background: #FFFFFF;
+  border-radius: 9999px;
+  box-shadow: 0 4px 20px rgba(41, 19, 108, 0.08), 0 1px 3px rgba(41, 19, 108, 0.04);
+  border: 1px solid rgba(189, 173, 235, 0.45);
 }
-.brand { color: var(--ink); font-size: .96rem; font-weight: 750; letter-spacing: -.015em; display: flex; align-items: center; gap: 8px; }
+.brand { color: var(--ink); font-size: 1rem; font-weight: 750; letter-spacing: -.02em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
 .brand-mark {
   display: inline-grid;
-  width: 26px; height: 26px;
+  width: 28px; height: 28px;
   place-items: center;
   border-radius: 8px;
   background: var(--primary-1);
   color: white;
-  font-size: .8rem;
+  font-size: .82rem;
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(71, 41, 163, .30);
 }
-.site-nav { display: flex; gap: 18px; color: var(--muted); font-size: .86rem; align-items: center; }
-.site-nav a { transition: color 0.15s ease; }
+.site-nav { display: flex; gap: 24px; color: var(--ink); font-size: .9rem; font-weight: 550; align-items: center; }
+.site-nav a { transition: color 0.15s ease; color: var(--ink); }
 .site-nav a:hover { color: var(--color-blue) !important; }
+.header-actions { display: flex; align-items: center; gap: 14px; }
+.site-nav-link-login {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.site-nav-link-login:hover {
+  color: var(--color-blue) !important;
+}
+.header-pill-btn {
+  background: var(--primary-1, #4729A3);
+  color: #FFFFFF !important;
+  font-size: 0.88rem;
+  font-weight: 650;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(71, 41, 163, 0.25);
+  transition: all 0.15s ease;
+}
+.header-pill-btn:hover {
+  background: var(--deep-purple, #29136C);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(41, 19, 108, 0.3);
+  color: #FFFFFF !important;
+}
 .site-nav-btn {
   background: none;
   border: none;
@@ -1978,98 +2011,161 @@ tr:hover .view-details-link {
   color: var(--accent);
 }
 
-/* ─── Home Page Responsive Redesign ──────────────────────────────────────── */
+/* ─── Home Page Scandinavian Pill Layout ──────────────────────────────────── */
 .home-wrapper {
   position: relative;
   width: 100%;
-  overflow: hidden;
-  background: radial-gradient(120% 70% at 50% 0%, #F5F1FD 0%, #EEEBFA 35%, rgba(248, 246, 254, 0.45) 70%, #FFFFFF 100%);
+  min-height: 100vh;
+  background: var(--canvas);
 }
 .hero-background-wrapper {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 540px;
+  height: 480px;
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
 }
 .hero-ambient-glow {
   position: absolute;
-  top: -60px;
+  top: -80px;
   left: 50%;
   transform: translateX(-50%);
   width: min(880px, 92vw);
   height: 380px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(189, 173, 235, 0.28) 0%, rgba(238, 235, 250, 0.20) 45%, rgba(255, 255, 255, 0) 72%);
+  background: radial-gradient(ellipse at center, rgba(238, 235, 250, 0.6) 0%, rgba(238, 235, 250, 0) 70%);
   pointer-events: none;
-}
-.hero-waves-svg {
-  position: absolute;
-  top: 20px;
-  left: 0;
-  width: 100%;
-  height: 520px;
-  pointer-events: none;
-  opacity: 0.95;
 }
 .home-shell {
   position: relative;
   z-index: 1;
-  max-width: 1160px;
-  padding: 48px 24px 80px;
+  max-width: 1140px;
+  padding: 44px 24px 80px;
 }
 .home-hero {
   text-align: center;
-  max-width: 760px;
-  margin: 0 auto 52px;
+  max-width: 820px;
+  margin: 0 auto 56px;
   position: relative;
 }
-.home-hero__eyebrow {
-  margin: 0 auto 10px;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  color: var(--primary-1);
-  font-weight: 700;
-  text-align: center;
-  display: block;
-  width: 100%;
+
+/* ─── Pill Announcement Chip (Matching Reference Design) ─────────────────── */
+.hero-announcement-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(189, 173, 235, 0.65);
+  border-radius: 9999px;
+  padding: 4px 16px 4px 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink, #29136C);
+  box-shadow: 0 2px 10px rgba(41, 19, 108, 0.05);
+  margin: 0 auto 24px;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.hero-announcement-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(41, 19, 108, 0.08);
+}
+.hero-chip__badge {
+  background: var(--deep-purple, #29136C);
+  color: #FFFFFF;
+  font-size: 0.74rem;
+  font-weight: 750;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.02em;
+}
+.hero-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-2, #8B70DB);
+  display: inline-block;
+}
+.hero-chip__text {
+  letter-spacing: -0.005em;
+  color: var(--ink, #29136C);
+}
+
 .home-hero__title {
-  margin: 0 0 16px;
-  font-size: clamp(1.9rem, 4.5vw, 3.2rem);
+  margin: 0 auto 18px;
+  font-size: clamp(2.4rem, 5.5vw, 4rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  color: var(--ink, #29136C);
+  text-align: center;
+  max-width: 820px;
 }
 .home-hero__desc {
-  margin: 0 auto 28px;
-  font-size: 1.05rem;
-  color: var(--muted);
+  margin: 0 auto 36px;
+  font-size: 1.1rem;
+  color: var(--ink, #29136C);
+  opacity: 0.84;
   line-height: 1.6;
-  max-width: 600px;
+  max-width: 660px;
+  text-align: center;
 }
+
+/* ─── Two Pill Buttons (Matching Reference Design) ───────────────────────── */
 .home-hero__cta-wrap {
   display: flex;
   justify-content: center;
+  align-items: center;
+  margin-top: 10px;
 }
-.home-hero__cta {
+.hero-cta-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.hero-pill-btn {
   font-size: 0.95rem;
-  padding: 12px 28px;
-  border-radius: 8px;
+  font-weight: 650;
+  padding: 13px 26px;
+  border-radius: 9999px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  font-weight: 650;
   text-decoration: none;
+  transition: all 0.15s ease;
 }
-.home-hero__cta:hover,
-.primary:hover,
-.btn-primary:hover {
+.hero-pill-btn--primary {
+  background: var(--deep-purple, #29136C);
   color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(41, 19, 108, 0.22);
+  border: 1px solid var(--deep-purple, #29136C);
+}
+.hero-pill-btn--primary:hover {
+  background: var(--primary-purple, #4729A3);
+  border-color: var(--primary-purple, #4729A3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(41, 19, 108, 0.28);
+  color: #FFFFFF !important;
+}
+.hero-pill-btn--secondary {
+  background: #FFFFFF;
+  color: var(--deep-purple, #29136C) !important;
+  border: 1px solid rgba(189, 173, 235, 0.7);
+  box-shadow: 0 2px 8px rgba(41, 19, 108, 0.05);
+}
+.hero-pill-btn--secondary:hover {
+  border-color: var(--color-blue);
+  color: var(--color-blue) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(41, 19, 108, 0.08);
 }
 .brand:hover {
   color: var(--ink);
@@ -2141,19 +2237,33 @@ tr:hover .view-details-link {
   align-items: start;
 }
 @media (max-width: 640px) {
+  .site-header {
+    top: 8px;
+    padding: 0 10px;
+  }
+  .site-header__inner {
+    border-radius: 18px;
+    padding: 6px 14px;
+    min-height: 50px;
+  }
+  .hero-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .hero-pill-btn {
+    width: 100%;
+    justify-content: center;
+  }
   .home-shell {
-    padding: 24px 16px 48px;
+    padding: 20px 16px 48px;
   }
   .home-hero {
     margin-bottom: 32px;
   }
   .home-hero__desc {
     font-size: 0.95rem;
-    margin-bottom: 20px;
-  }
-  .home-hero__cta {
-    width: 100%;
-    padding: 13px 20px;
+    margin-bottom: 24px;
   }
   .features-grid {
     grid-template-columns: 1fr;

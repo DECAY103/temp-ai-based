@@ -47,9 +47,13 @@ export default function Home() {
       <main className="shell home-shell">
         {/* ── Hero Section ─────────────────────────────────────────────────── */}
         <section className="home-hero" aria-labelledby="project-title">
-          <p className="eyebrow home-hero__eyebrow" style={{ textAlign: "center" }}>
-            Software Engineering Project
-          </p>
+          <div className="hero-announcement-chip">
+            <span className="hero-chip__badge">
+              <span className="hero-chip__dot" aria-hidden="true" />
+              <span>Project</span>
+            </span>
+            <span className="hero-chip__text">Software Engineering Project — NITK Surathkal</span>
+          </div>
           <h1 id="project-title" className="home-hero__title">
             AI-based Resume Screening
           </h1>
