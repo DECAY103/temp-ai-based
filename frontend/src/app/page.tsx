@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeroBackground } from "@/components/HeroBackground";
 
 export default function Home() {
   const features = [
@@ -40,29 +41,31 @@ export default function Home() {
   ];
 
   return (
-    <main className="shell home-shell">
-      {/* ── Hero Section ─────────────────────────────────────────────────── */}
-      <section className="home-hero" aria-labelledby="project-title">
-        <p className="eyebrow home-hero__eyebrow">
-          Software Engineering Project
-        </p>
-        <h1 id="project-title" className="home-hero__title">
-          AI-based Resume Screening
-        </h1>
-        <p className="home-hero__desc">
-          An automated workspace for validating resumes, anonymising applicant data,
-          and evaluating candidate qualifications against structured job rubrics.
-        </p>
-        <div className="home-hero__cta-wrap">
-          <Link className="primary home-hero__cta" href="/auth/login">
-            <span>Open Screening Portal</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </Link>
-        </div>
-      </section>
+    <div className="home-wrapper">
+      <HeroBackground />
+      <main className="shell home-shell">
+        {/* ── Hero Section ─────────────────────────────────────────────────── */}
+        <section className="home-hero" aria-labelledby="project-title">
+          <p className="eyebrow home-hero__eyebrow" style={{ textAlign: "center" }}>
+            Software Engineering Project
+          </p>
+          <h1 id="project-title" className="home-hero__title">
+            AI-based Resume Screening
+          </h1>
+          <p className="home-hero__desc">
+            An automated workspace for validating resumes, anonymising applicant data,
+            and evaluating candidate qualifications against structured job rubrics.
+          </p>
+          <div className="home-hero__cta-wrap">
+            <Link className="primary home-hero__cta" href="/auth/login">
+              <span>Open Screening Portal</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
+          </div>
+        </section>
 
       {/* ── Features Section (3 Core Modules) ────────────────────────────── */}
       <section className="home-features-section" aria-labelledby="features-heading">
@@ -157,5 +160,6 @@ export default function Home() {
         </div>
       </section>
     </main>
+  </div>
   );
 }

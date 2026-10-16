@@ -134,7 +134,8 @@ export function SiteHeader() {
                       cursor: "pointer",
                       padding: 0,
                     }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--ink)")}
+                    className="site-nav-btn"
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-blue, #0D6EFD)")}
                     onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--muted)")}
                   >
                     Sign out

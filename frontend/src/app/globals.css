@@ -30,7 +30,7 @@
   --color-liberty-green:  #4729A3; /* Primary Purple: positive status */
   --color-mustard-yellow: #8B70DB; /* Medium Purple: warning status */
   --color-coral-red:      #29136C; /* Deep Purple: error / critical notice */
-  --color-blue:           #4729A3; /* Primary Purple: links & interactive */
+  --color-blue:           #0D6EFD; /* Digital Manual Blue: hyperlinks hover */
   --color-grey-1:         #BDADEB; /* Light Purple: subtle borders */
   --color-grey-2:         #8B70DB; /* Medium Purple: icons & accents */
   --color-grey-3:         #4729A3; /* Primary Purple: secondary text */
@@ -52,7 +52,7 @@
 
   /* Hyperlinks */
   --link:                 #4729A3; /* Primary Purple */
-  --link-hover:           #8B70DB; /* Medium Purple */
+  --link-hover:           #0D6EFD; /* Blue hover state */
 
   /* Status Tokens (Harmonized to Purple Palette) */
   --good:                 #4729A3; /* Primary Purple */
@@ -80,7 +80,8 @@
 html { background: var(--canvas); scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--canvas);
+  background: linear-gradient(180deg, #F8F6FE 0%, #EEEBFA 180px, #FAF8FE 480px, #FFFFFF 950px);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: 'Noto Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -88,7 +89,14 @@ body {
 }
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-a { color: inherit; text-decoration: none; }
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+a:hover {
+  color: var(--color-blue);
+}
 h1, h2, h3, h4, p { margin-top: 0; }
 
 /* ─── Themed Browser Surfaces (Craft Floor Compliance) ───────────────────── */
@@ -269,8 +277,22 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(71, 41, 163, .30);
 }
-.site-nav { display: flex; gap: 18px; color: var(--muted); font-size: .86rem; }
-.site-nav a:hover { color: var(--accent); }
+.site-nav { display: flex; gap: 18px; color: var(--muted); font-size: .86rem; align-items: center; }
+.site-nav a { transition: color 0.15s ease; }
+.site-nav a:hover { color: var(--color-blue) !important; }
+.site-nav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.86rem;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+.site-nav-btn:hover {
+  color: var(--color-blue) !important;
+}
 
 /* ─── Hero / Project Intro ───────────────────────────────────────────────── */
 .project-intro {
@@ -1957,7 +1979,45 @@ tr:hover .view-details-link {
 }
 
 /* ─── Home Page Responsive Redesign ──────────────────────────────────────── */
+.home-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: radial-gradient(120% 70% at 50% 0%, #F5F1FD 0%, #EEEBFA 35%, rgba(248, 246, 254, 0.45) 70%, #FFFFFF 100%);
+}
+.hero-background-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 540px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.hero-ambient-glow {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(880px, 92vw);
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(189, 173, 235, 0.28) 0%, rgba(238, 235, 250, 0.20) 45%, rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+}
+.hero-waves-svg {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  height: 520px;
+  pointer-events: none;
+  opacity: 0.95;
+}
 .home-shell {
+  position: relative;
+  z-index: 1;
   max-width: 1160px;
   padding: 48px 24px 80px;
 }
@@ -1965,13 +2025,17 @@ tr:hover .view-details-link {
   text-align: center;
   max-width: 760px;
   margin: 0 auto 52px;
+  position: relative;
 }
 .home-hero__eyebrow {
-  margin-bottom: 10px;
+  margin: 0 auto 10px;
   font-size: 0.82rem;
   letter-spacing: 0.08em;
   color: var(--primary-1);
   font-weight: 700;
+  text-align: center;
+  display: block;
+  width: 100%;
 }
 .home-hero__title {
   margin: 0 0 16px;
@@ -2001,6 +2065,14 @@ tr:hover .view-details-link {
   gap: 8px;
   font-weight: 650;
   text-decoration: none;
+}
+.home-hero__cta:hover,
+.primary:hover,
+.btn-primary:hover {
+  color: #FFFFFF !important;
+}
+.brand:hover {
+  color: var(--ink);
 }
 .home-features-section {
   margin-bottom: 56px;
