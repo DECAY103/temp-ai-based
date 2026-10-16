@@ -7,6 +7,7 @@ redaction, and the prompt-injection scan.
 from __future__ import annotations
 
 import io
+import time
 import zipfile
 
 from fastapi import APIRouter, Depends, File, UploadFile
@@ -22,32 +23,54 @@ router = APIRouter()
 
 
 def _process_pdf(filename: str, pdf_bytes: bytes) -> ProcessingFileResult:
-    """Run M.3–M.6 for a single PDF and keep failures visible to the UI."""
+    """Run M.3–M.6 for a single PDF and keep failures and stage timings visible to the UI."""
+    t_start = time.perf_counter()
+
+    # Stage 1: Data Ingestion / Validation
+    t_ingest_start = time.perf_counter()
     try:
         # ``python-magic`` uses native state and is not safe to invoke from
         # FastAPI's worker thread on every platform. Validation is small and
         # bounded by the upload limit, so keep it on the request thread.
         check_pdf(pdf_bytes)
+        ingestion_time = round(time.perf_counter() - t_ingest_start, 4)
     except ValidationError as exc:
+        ingestion_time = round(time.perf_counter() - t_ingest_start, 4)
+        total_time = round(time.perf_counter() - t_start, 4)
         return ProcessingFileResult(
             filename=filename,
             status="failed",
             validation_passed=False,
             error=str(exc),
+            ingestion_time_sec=ingestion_time,
+            total_time_sec=total_time,
         )
 
+    # Stage 2: Data Extraction
+    t_extract_start = time.perf_counter()
     try:
         extracted_text = extract_text(pdf_bytes)
+        extraction_time = round(time.perf_counter() - t_extract_start, 4)
     except ExtractionError as exc:
+        extraction_time = round(time.perf_counter() - t_extract_start, 4)
+        total_time = round(time.perf_counter() - t_start, 4)
         return ProcessingFileResult(
             filename=filename,
             status="failed",
             validation_passed=True,
             error=str(exc),
+            ingestion_time_sec=ingestion_time,
+            extraction_time_sec=extraction_time,
+            total_time_sec=total_time,
         )
 
+    # Stage 3: Data Processing (Sanitisation & Adversarial Prompt-Injection Scan)
+    t_proc_start = time.perf_counter()
     anonymised_text = anonymise(extracted_text)
     safety_passed, safety_reason = scan_safe(anonymised_text)
+    processing_time = round(time.perf_counter() - t_proc_start, 4)
+    total_time = round(time.perf_counter() - t_start, 4)
+
     return ProcessingFileResult(
         filename=filename,
         status="accepted" if safety_passed else "rejected",
@@ -56,6 +79,10 @@ def _process_pdf(filename: str, pdf_bytes: bytes) -> ProcessingFileResult:
         anonymised_text=anonymised_text,
         safety_passed=safety_passed,
         safety_reason=safety_reason or None,
+        ingestion_time_sec=ingestion_time,
+        extraction_time_sec=extraction_time,
+        processing_time_sec=processing_time,
+        total_time_sec=total_time,
     )
 
 
@@ -64,22 +91,41 @@ async def preview_processing(
     file: UploadFile = File(..., description="A PDF resume or ZIP of PDF resumes"),
     user: CurrentUser = Depends(require_roles(UserRole.candidate, UserRole.recruiter, UserRole.admin)),
 ) -> ProcessingResponse:
-    """Return the direct output of validation, extraction, anonymisation and scan."""
+    """Return the direct output of validation, extraction, anonymisation and scan with timing metrics."""
+    t_total_start = time.perf_counter()
+    t_ingest_start = time.perf_counter()
     file_bytes = await file.read()
     filename = file.filename or "uploaded-file"
+
+    print(f"\n================================================================================")
+    print(f"🚀 [PREVIEW PROCESSING START] File: {filename} ({len(file_bytes)} bytes)")
+    print(f"================================================================================")
 
     if filename.lower().endswith(".zip"):
         try:
             pdf_names = check_zip(file_bytes)
+            ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
+            print(f"⏱️  [DATA INGESTION] ZIP archive verified and unpacked in {ingestion_time:.3f}s ({len(pdf_names)} candidate PDFs)")
         except ValidationError as exc:
+            ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
+            total_time = round(time.perf_counter() - t_total_start, 3)
+            print(f"❌ [DATA INGESTION FAILED] ZIP validation error: {exc}")
             results = [ProcessingFileResult(
                 filename=filename,
                 status="failed",
                 validation_passed=False,
                 error=str(exc),
+                ingestion_time_sec=ingestion_time,
+                total_time_sec=total_time,
             )]
             return ProcessingResponse(
-                input_type="zip", total_files=1, accepted_files=0, rejected_files=1, files=results
+                input_type="zip",
+                total_files=1,
+                accepted_files=0,
+                rejected_files=1,
+                files=results,
+                ingestion_time_sec=ingestion_time,
+                total_time_sec=total_time,
             )
 
         with zipfile.ZipFile(io.BytesIO(file_bytes)) as archive:
@@ -90,8 +136,23 @@ async def preview_processing(
         ]
         input_type = "zip"
     else:
+        ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
+        print(f"⏱️  [DATA INGESTION] Single PDF received and staged in {ingestion_time:.3f}s")
         results = [_process_pdf(filename, file_bytes)]
         input_type = "pdf"
+
+    total_extract_time = round(sum(r.extraction_time_sec or 0.0 for r in results), 3)
+    total_proc_time = round(sum(r.processing_time_sec or 0.0 for r in results), 3)
+    total_time = round(time.perf_counter() - t_total_start, 3)
+
+    print(f"⏱️  [DATA EXTRACTION] Extracted text across {len(results)} file(s) in {total_extract_time:.3f}s")
+    print(f"⏱️  [DATA PROCESSING] PII anonymisation and adversarial scan took {total_proc_time:.3f}s")
+    print(f"================================================================================")
+    print(f"🏁 [PREVIEW COMPLETE] Total preview turnaround time: {total_time:.3f}s")
+    print(f"   ├─ Data Ingestion Time : {ingestion_time:.3f}s")
+    print(f"   ├─ Data Extraction Time: {total_extract_time:.3f}s")
+    print(f"   └─ Data Processing Time: {total_proc_time:.3f}s")
+    print(f"================================================================================\n")
 
     accepted_files = sum(result.status == "accepted" for result in results)
     return ProcessingResponse(
@@ -100,4 +161,8 @@ async def preview_processing(
         accepted_files=accepted_files,
         rejected_files=len(results) - accepted_files,
         files=results,
+        ingestion_time_sec=ingestion_time,
+        extraction_time_sec=total_extract_time,
+        processing_time_sec=total_proc_time,
+        total_time_sec=total_time,
     )

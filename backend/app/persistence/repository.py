@@ -308,6 +308,73 @@ async def increment_batch_total_files(batch_id: str) -> None:
         await conn.execute("UPDATE batch_jobs SET total_files=total_files+1 WHERE batch_id=$1::uuid", batch_id)
 
 
+# ─── Batch Timing Metrics ───────────────────────────────────────────────────
+
+_batch_timings: dict[str, dict[str, Any]] = {}
+
+
+def start_batch_timing(batch_id: str) -> None:
+    import time
+    _batch_timings[str(batch_id)] = {
+        "start_time": time.perf_counter(),
+        "ingestion_time_sec": None,
+        "extraction_time_sec": None,
+        "processing_time_sec": None,
+        "total_time_sec": None,
+    }
+
+
+def set_batch_timing_stage(batch_id: str, stage: str, elapsed_sec: float) -> None:
+    bid = str(batch_id)
+    if bid not in _batch_timings:
+        start_batch_timing(bid)
+    _batch_timings[bid][stage] = round(elapsed_sec, 3)
+
+
+def get_batch_timings(batch_id: str) -> dict[str, Any]:
+    import time
+    bid = str(batch_id)
+    timings = dict(_batch_timings.get(bid, {}))
+    if "start_time" in timings:
+        timings["elapsed_time_sec"] = round(time.perf_counter() - timings["start_time"], 1)
+    return timings
+
+
+async def update_batch_timings(
+    batch_id: str,
+    *,
+    ingestion_time_sec: float | None = None,
+    extraction_time_sec: float | None = None,
+    processing_time_sec: float | None = None,
+    total_time_sec: float | None = None,
+) -> None:
+    bid = str(batch_id)
+    if ingestion_time_sec is not None:
+        set_batch_timing_stage(bid, "ingestion_time_sec", ingestion_time_sec)
+    if extraction_time_sec is not None:
+        set_batch_timing_stage(bid, "extraction_time_sec", extraction_time_sec)
+    if processing_time_sec is not None:
+        set_batch_timing_stage(bid, "processing_time_sec", processing_time_sec)
+    if total_time_sec is not None:
+        set_batch_timing_stage(bid, "total_time_sec", total_time_sec)
+
+    pool = get_pool()
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """UPDATE batch_jobs SET
+                   ingestion_time_sec = COALESCE($1, ingestion_time_sec),
+                   extraction_time_sec = COALESCE($2, extraction_time_sec),
+                   processing_time_sec = COALESCE($3, processing_time_sec),
+                   total_time_sec = COALESCE($4, total_time_sec)
+                   WHERE batch_id = $5::uuid""",
+                ingestion_time_sec, extraction_time_sec, processing_time_sec, total_time_sec, batch_id
+            )
+    except Exception:
+        # Fallback to in-memory metrics if DB column or connection unavailable
+        pass
+
+
 async def update_batch_status(batch_id: str, status: BatchStatus, error_log: str | None = None) -> None:
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -316,16 +383,59 @@ async def update_batch_status(batch_id: str, status: BatchStatus, error_log: str
 
 async def get_batch_status(batch_id: str) -> Optional[dict]:
     pool = get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            """SELECT b.batch_id,b.status,b.total_files,b.error_log as batch_error_log,
-                      COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) processed_files,
-                      COUNT(c.id) FILTER (WHERE c.status='failed') failed_files,
-                      COUNT(c.id) FILTER (WHERE c.status='pre_filtered') pre_filtered_count,
-                      ARRAY_REMOVE(ARRAY_AGG(DISTINCT c.error_log), NULL) as candidate_errors
-               FROM batch_jobs b LEFT JOIN candidate_evaluations c ON c.batch_id=b.batch_id
-               WHERE b.batch_id=$1::uuid GROUP BY b.batch_id""", batch_id)
-    return dict(row) if row else None
+    bid = str(batch_id)
+    row = None
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """SELECT b.batch_id,b.status,b.total_files,b.error_log as batch_error_log,
+                          b.ingestion_time_sec, b.extraction_time_sec, b.processing_time_sec, b.total_time_sec,
+                          COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) processed_files,
+                          COUNT(c.id) FILTER (WHERE c.status='failed') failed_files,
+                          COUNT(c.id) FILTER (WHERE c.status='pre_filtered') pre_filtered_count,
+                          ARRAY_REMOVE(ARRAY_AGG(DISTINCT c.error_log), NULL) as candidate_errors
+                   FROM batch_jobs b LEFT JOIN candidate_evaluations c ON c.batch_id=b.batch_id
+                   WHERE b.batch_id=$1::uuid GROUP BY b.batch_id""", batch_id)
+    except Exception:
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """SELECT b.batch_id,b.status,b.total_files,b.error_log as batch_error_log,
+                              COUNT(c.id) FILTER (WHERE c.status IN ('completed','pre_filtered','failed')) processed_files,
+                              COUNT(c.id) FILTER (WHERE c.status='failed') failed_files,
+                              COUNT(c.id) FILTER (WHERE c.status='pre_filtered') pre_filtered_count,
+                              ARRAY_REMOVE(ARRAY_AGG(DISTINCT c.error_log), NULL) as candidate_errors
+                       FROM batch_jobs b LEFT JOIN candidate_evaluations c ON c.batch_id=b.batch_id
+                       WHERE b.batch_id=$1::uuid GROUP BY b.batch_id""", batch_id)
+        except Exception:
+            row = None
+    if not row:
+        mem = get_batch_timings(bid)
+        if mem:
+            return {
+                "batch_id": bid,
+                "status": "extracting" if not mem.get("extraction_time_sec") else "scoring",
+                "total_files": 1,
+                "processed_files": 0,
+                "failed_files": 0,
+                "pre_filtered_count": 0,
+                "batch_error_log": None,
+                "candidate_errors": [],
+                "ingestion_time_sec": mem.get("ingestion_time_sec"),
+                "extraction_time_sec": mem.get("extraction_time_sec"),
+                "processing_time_sec": mem.get("processing_time_sec"),
+                "total_time_sec": mem.get("total_time_sec"),
+                "elapsed_time_sec": mem.get("elapsed_time_sec"),
+            }
+        return None
+    res = dict(row)
+    mem = get_batch_timings(bid)
+    res["ingestion_time_sec"] = res.get("ingestion_time_sec") or mem.get("ingestion_time_sec")
+    res["extraction_time_sec"] = res.get("extraction_time_sec") or mem.get("extraction_time_sec")
+    res["processing_time_sec"] = res.get("processing_time_sec") or mem.get("processing_time_sec")
+    res["total_time_sec"] = res.get("total_time_sec") or mem.get("total_time_sec")
+    res["elapsed_time_sec"] = mem.get("elapsed_time_sec")
+    return res
 
 
 async def get_batch_context(batch_id: str) -> Optional[dict]:

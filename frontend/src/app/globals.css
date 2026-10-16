@@ -2910,4 +2910,73 @@ button, a, input, select, textarea {
   touch-action: manipulation;
 }
 
+/* ─── Real-time Pipeline Timing Display ─────────────────────────────────── */
+.status-timings-card {
+  margin-top: 18px;
+  padding: 16px;
+  background: var(--surface-soft, #f8f6fc);
+  border: 1px solid var(--line, #e2daf0);
+  border-radius: 12px;
+}
+.status-timings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.status-timings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+.status-timing-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2daf0);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.status-timing-label {
+  font-size: 0.72rem;
+  color: var(--muted, #4729A3);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-timing-value {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--ink, #29136C);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.timing-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink, #29136C);
+  background: var(--surface, #ffffff);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e2daf0);
+}
+.timing-pulsing {
+  animation: pulseTimingGlow 1.4s ease-in-out infinite;
+  color: var(--primary-purple, #6C38FF);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+@keyframes pulseTimingGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+
 

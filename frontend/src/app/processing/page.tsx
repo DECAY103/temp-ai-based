@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { processingApi, ProcessingResult } from "@/lib/api";
 
 function fileSize(bytes: number) {
@@ -21,6 +21,40 @@ function OutputCard({ result }: { result: ProcessingResult }) {
           <span><strong>{result.total_files}</strong> processed</span>
           <span className="good"><strong>{result.accepted_files}</strong> accepted</span>
           {result.rejected_files > 0 && <span className="bad"><strong>{result.rejected_files}</strong> flagged</span>}
+        </div>
+      </div>
+
+      {/* Real-time Pipeline Execution Timings Card */}
+      <div className="status-timings-card" style={{ marginBottom: "20px" }}>
+        <div className="status-timings-header">
+          <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
+            ⚡ Pipeline Execution Timings
+          </span>
+          {result.total_time_sec != null && (
+            <span className="timing-badge">
+              Total: {result.total_time_sec.toFixed(3)}s
+            </span>
+          )}
+        </div>
+        <div className="status-timings-grid">
+          <div className="status-timing-item">
+            <span className="status-timing-label">📥 Data Ingestion</span>
+            <span className="status-timing-value">
+              {result.ingestion_time_sec != null ? `✓ ${result.ingestion_time_sec.toFixed(3)}s` : "Done"}
+            </span>
+          </div>
+          <div className="status-timing-item">
+            <span className="status-timing-label">📄 Data Extraction</span>
+            <span className="status-timing-value">
+              {result.extraction_time_sec != null ? `✓ ${result.extraction_time_sec.toFixed(3)}s` : "Done"}
+            </span>
+          </div>
+          <div className="status-timing-item">
+            <span className="status-timing-label">🧠 Data Processing</span>
+            <span className="status-timing-value">
+              {result.processing_time_sec != null ? `✓ ${result.processing_time_sec.toFixed(3)}s` : "Done"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -49,6 +83,15 @@ function OutputCard({ result }: { result: ProcessingResult }) {
             </span>
           </div>
 
+          {(file.extraction_time_sec != null || file.processing_time_sec != null) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", marginTop: "10px", fontSize: "0.8rem", color: "var(--muted)" }}>
+              {file.ingestion_time_sec != null && <span>📥 Ingestion: <strong style={{ color: "var(--ink)" }}>{file.ingestion_time_sec.toFixed(4)}s</strong></span>}
+              {file.extraction_time_sec != null && <span>📄 Extraction: <strong style={{ color: "var(--ink)" }}>{file.extraction_time_sec.toFixed(4)}s</strong></span>}
+              {file.processing_time_sec != null && <span>🧠 Processing: <strong style={{ color: "var(--ink)" }}>{file.processing_time_sec.toFixed(4)}s</strong></span>}
+              {file.total_time_sec != null && <span>⏱️ Turnaround: <strong style={{ color: "var(--ink)" }}>{file.total_time_sec.toFixed(4)}s</strong></span>}
+            </div>
+          )}
+
           {file.error && <p className="message error-message">{file.error}</p>}
           {file.safety_reason && <p className="message warning-message">{file.safety_reason}</p>}
 
@@ -76,6 +119,17 @@ export default function ProcessingPage() {
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingElapsed, setLoadingElapsed] = useState<number>(0);
+
+  // Active elapsed timer while processing file
+  useEffect(() => {
+    if (!loading) return;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      setLoadingElapsed(Math.round(((Date.now() - start) / 1000) * 10) / 10);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   function chooseFile(nextFile: File | null) {
     setFile(nextFile);
@@ -91,10 +145,25 @@ export default function ProcessingPage() {
     event.preventDefault();
     if (!file) return;
     setLoading(true);
+    setLoadingElapsed(0);
     setError(null);
     setResult(null);
+
+    console.log(`\n🚀 [Preview Processing Start] File: ${file.name} (${file.size} bytes)`);
+
     try {
-      setResult(await processingApi.preview(file));
+      const res = await processingApi.preview(file);
+      setResult(res);
+
+      console.log(
+        `================================================================================\n` +
+        `🏁 [Preview Processing Complete] Total Turnaround: ${res.total_time_sec != null ? res.total_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `   ├─ Data Ingestion Time : ${res.ingestion_time_sec != null ? res.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `   ├─ Data Extraction Time: ${res.extraction_time_sec != null ? res.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `   ├─ Data Processing Time: ${res.processing_time_sec != null ? res.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `   └─ Total Files Processed: ${res.total_files} (${res.accepted_files} accepted, ${res.rejected_files} flagged)\n` +
+        `================================================================================`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "The file could not be processed.");
     } finally {
@@ -123,6 +192,34 @@ export default function ProcessingPage() {
               {loading ? "Processing…" : "Process file"}
             </button>
           </div>
+
+          {loading && (
+            <div className="status-timings-card" style={{ marginTop: "16px" }}>
+              <div className="status-timings-header">
+                <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
+                  ⚡ Real-time Ingestion & Processing
+                </span>
+                <span className="timing-badge">
+                  ⏱️ Elapsed: {loadingElapsed.toFixed(1)}s
+                </span>
+              </div>
+              <div className="status-timings-grid">
+                <div className="status-timing-item">
+                  <span className="status-timing-label">📥 Data Ingestion</span>
+                  <span className="status-timing-value"><span className="timing-pulsing">Verifying & Unpacking…</span></span>
+                </div>
+                <div className="status-timing-item">
+                  <span className="status-timing-label">📄 Data Extraction</span>
+                  <span className="status-timing-value"><span className="timing-pulsing">Extracting text…</span></span>
+                </div>
+                <div className="status-timing-item">
+                  <span className="status-timing-label">🧠 Data Processing</span>
+                  <span className="status-timing-value"><span className="timing-pulsing">PII & Safety scan…</span></span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && <p className="message error-message" role="alert">{error}</p>}
         </form>
 
@@ -135,3 +232,4 @@ export default function ProcessingPage() {
     </main>
   );
 }
+

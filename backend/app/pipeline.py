@@ -19,6 +19,12 @@ from app.sanitisation.adversarial import scan_safe
 from app.sanitisation.anonymiser import anonymise
 
 
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
+
 def rubric_to_text(rubric: object) -> str:
     return json.dumps(rubric, indent=2) if isinstance(rubric, (dict, list)) else str(rubric)
 
@@ -44,13 +50,30 @@ def _process_file(name: str, payload: bytes) -> tuple[str | None, str | None]:
 
 
 async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object, parent_batch_id: str | None = None) -> None:
+    t_start = time.perf_counter()
+    repository.start_batch_timing(batch_id)
+
+    print(f"\n================================================================================")
+    print(f"🚀 [PIPELINE STARTED] Batch ID: {batch_id} | File: {filename}")
+    print(f"================================================================================")
+    logger.info("[Pipeline] Starting batch %s for '%s'", batch_id, filename)
+
     try:
+        # ── 1. Data Ingestion Phase ──────────────────────────────────────────
+        t_ingest_start = time.perf_counter()
         await repository.update_batch_status(batch_id, BatchStatus.extracting)
         files = await asyncio.to_thread(_files, payload, filename)
+        ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
+
+        await repository.update_batch_timings(batch_id, ingestion_time_sec=ingestion_time)
+        print(f"⏱️  [DATA INGESTION] Batch {batch_id}: Ingestion & validation took {ingestion_time:.3f}s ({len(files)} file(s))")
+        logger.info("[DATA INGESTION] Batch %s: %s files validated in %.3fs", batch_id, len(files), ingestion_time)
+
         clean: dict[str, str] = {}
         file_map: dict[str, tuple[str, bytes]] = {}
 
-        # Concurrency limit of 3 to balance latency and free-tier memory/CPU usage
+        # ── 2. Data Extraction Phase ─────────────────────────────────────────
+        t_extract_start = time.perf_counter()
         extract_sem = asyncio.Semaphore(3)
 
         async def _extract_worker(name: str, item: bytes):
@@ -71,12 +94,24 @@ async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object
                 clean[candidate_id] = text
                 await repository.upsert_candidate_evaluation(batch_id, candidate_id, BatchStatus.extracting, filename=name, resume_bytes=item)
 
+        extraction_time = round(time.perf_counter() - t_extract_start, 3)
+        await repository.update_batch_timings(batch_id, extraction_time_sec=extraction_time)
+        avg_extract = (extraction_time / len(files)) if files else 0
+        print(f"⏱️  [DATA EXTRACTION] Batch {batch_id}: Extraction, PII sanitisation & scan took {extraction_time:.3f}s (avg: {avg_extract:.3f}s/file)")
+        logger.info("[DATA EXTRACTION] Batch %s: %s files extracted in %.3fs", batch_id, len(clean), extraction_time)
+
         if not clean:
+            total_failed_time = round(time.perf_counter() - t_start, 3)
+            await repository.update_batch_timings(batch_id, total_time_sec=total_failed_time)
             await repository.update_batch_status(batch_id, BatchStatus.failed, "No resume passed ingestion and safety checks.")
+            print(f"❌ [DATA EXTRACTION FAILED] Batch {batch_id}: No usable resumes after {total_failed_time:.3f}s")
             return
 
+        # ── 3. Data Processing Phase (Scoring & Evaluation) ───────────────────
+        t_proc_start = time.perf_counter()
         await repository.update_batch_status(batch_id, BatchStatus.scoring)
         rubric_text = rubric_to_text(rubric)
+
         ranked = await asyncio.to_thread(rank_candidates, rubric_text, clean, settings.stage1_top_n)
         shortlisted: dict[str, str] = {}
 
@@ -90,7 +125,6 @@ async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object
                 if parent_batch_id:
                     await repository.upsert_candidate_evaluation(parent_batch_id, candidate.candidate_id, BatchStatus.pre_filtered, candidate.cosine_similarity_score, filename=c_name, resume_bytes=c_bytes)
 
-        # Concurrently evaluate shortlisted candidates with bounded concurrency (3 parallel workers)
         eval_sem = asyncio.Semaphore(3)
 
         async def _eval_worker(candidate_id: str, text: str):
@@ -109,6 +143,32 @@ async def run_batch(batch_id: str, payload: bytes, filename: str, rubric: object
                         await repository.upsert_candidate_evaluation(parent_batch_id, candidate_id, BatchStatus.failed, error_log=str(exc), filename=c_name, resume_bytes=c_bytes)
 
         await asyncio.gather(*(_eval_worker(cid, text) for cid, text in shortlisted.items()))
+
+        processing_time = round(time.perf_counter() - t_proc_start, 3)
+        total_time = round(time.perf_counter() - t_start, 3)
+
+        await repository.update_batch_timings(
+            batch_id,
+            processing_time_sec=processing_time,
+            total_time_sec=total_time,
+        )
         await repository.update_batch_status(batch_id, BatchStatus.completed)
+
+        print(f"⏱️  [DATA PROCESSING] Batch {batch_id}: Semantic ranking & LLM evaluation took {processing_time:.3f}s")
+        print(f"================================================================================")
+        print(f"🏁 [PIPELINE COMPLETE] Batch {batch_id}: Total turnaround time: {total_time:.3f}s")
+        print(f"   ├─ Data Ingestion Time : {ingestion_time:.3f}s")
+        print(f"   ├─ Data Extraction Time: {extraction_time:.3f}s")
+        print(f"   └─ Data Processing Time: {processing_time:.3f}s")
+        print(f"================================================================================\n")
+        logger.info(
+            "[Pipeline Complete] Batch %s in %.3fs (Ingestion: %.3fs, Extraction: %.3fs, Processing: %.3fs)",
+            batch_id, total_time, ingestion_time, extraction_time, processing_time,
+        )
     except Exception:
-        await repository.update_batch_status(batch_id, BatchStatus.failed, traceback.format_exc())
+        err = traceback.format_exc()
+        total_failed = round(time.perf_counter() - t_start, 3)
+        await repository.update_batch_timings(batch_id, total_time_sec=total_failed)
+        await repository.update_batch_status(batch_id, BatchStatus.failed, err)
+        print(f"❌ [PIPELINE ERROR] Batch {batch_id} failed after {total_failed:.3f}s:\n{err}")
+        logger.error("[Pipeline Error] Batch %s failed: %s", batch_id, err)

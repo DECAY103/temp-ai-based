@@ -30,6 +30,11 @@ export interface BatchStatus {
   pre_filtered_count: number;
   progress_percentage: number;
   error_logs?: string[];
+  ingestion_time_sec?: number | null;
+  extraction_time_sec?: number | null;
+  processing_time_sec?: number | null;
+  total_time_sec?: number | null;
+  elapsed_time_sec?: number | null;
 }
 
 export interface CandidateResult {
@@ -55,6 +60,10 @@ export interface ProcessingFileResult {
   safety_passed: boolean | null;
   safety_reason: string | null;
   error: string | null;
+  ingestion_time_sec?: number | null;
+  extraction_time_sec?: number | null;
+  processing_time_sec?: number | null;
+  total_time_sec?: number | null;
 }
 
 export interface ProcessingResult {
@@ -63,6 +72,10 @@ export interface ProcessingResult {
   accepted_files: number;
   rejected_files: number;
   files: ProcessingFileResult[];
+  ingestion_time_sec?: number | null;
+  extraction_time_sec?: number | null;
+  processing_time_sec?: number | null;
+  total_time_sec?: number | null;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────

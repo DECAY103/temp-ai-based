@@ -18,7 +18,7 @@
  */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { jobsApi, type BatchStatus } from "@/lib/api";
 import Link from "next/link";
 
@@ -31,6 +31,17 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   const [status, setStatus] = useState<BatchStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
+  const [elapsedSec, setElapsedSec] = useState<number>(0);
+
+  // Live stopwatch counter while batch is running
+  useEffect(() => {
+    const start = startTimeRef.current;
+    const interval = setInterval(() => {
+      setElapsedSec(Math.round(((Date.now() - start) / 1000) * 10) / 10);
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -41,7 +52,28 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         const data = await jobsApi.getStatus(batchId);
         if (!active) return;
         setStatus(data);
-        if (data.status === "completed" || data.status === "failed") {
+
+        const currentElapsed = Math.round(((Date.now() - startTimeRef.current) / 1000) * 10) / 10;
+        console.log(
+          `⏱️ [Batch ${batchId}] Status: ${data.status.toUpperCase()} | ` +
+          `Ingestion: ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : 'in progress...'} | ` +
+          `Extraction: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : 'waiting/active...'} | ` +
+          `Processing: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : 'waiting/active...'} | ` +
+          `Elapsed: ${currentElapsed.toFixed(1)}s`
+        );
+
+        if (data.status === "completed") {
+          console.log(
+            `================================================================================\n` +
+            `🏁 [PIPELINE COMPLETE] Batch ${batchId} Turnaround Time: ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s\n` +
+            `   ├─ Data Ingestion Time : ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `   ├─ Data Extraction Time: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `   ├─ Data Processing Time: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `   └─ Total Elapsed Time  : ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s\n` +
+            `================================================================================`
+          );
+          if (timer) clearInterval(timer);
+        } else if (data.status === "failed") {
           if (timer) clearInterval(timer);
         }
       } catch (err) {
@@ -75,9 +107,39 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   if (error) return <p className="message error-message" role="alert">{error}</p>;
   if (!status) return (
     <section className="status-card" aria-busy="true">
-      <p className="eyebrow">Processing</p>
-      <h2>Preparing your files…</h2>
+      <div className="status-heading">
+        <div>
+          <p className="eyebrow">Processing</p>
+          <h2>Preparing your files…</h2>
+        </div>
+        <span className="status-chip">Queued</span>
+      </div>
       <p className="field-help">This page updates automatically.</p>
+
+      <div className="status-timings-card">
+        <div className="status-timings-header">
+          <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
+            ⚡ Pipeline Stage Timings
+          </span>
+          <span className="timing-badge">
+            ⏱️ Elapsed: {elapsedSec.toFixed(1)}s
+          </span>
+        </div>
+        <div className="status-timings-grid">
+          <div className="status-timing-item">
+            <span className="status-timing-label">📥 Data Ingestion</span>
+            <span className="status-timing-value"><span className="timing-pulsing">Starting…</span></span>
+          </div>
+          <div className="status-timing-item">
+            <span className="status-timing-label">📄 Data Extraction</span>
+            <span className="status-timing-value"><span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span></span>
+          </div>
+          <div className="status-timing-item">
+            <span className="status-timing-label">🧠 Data Processing</span>
+            <span className="status-timing-value"><span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span></span>
+          </div>
+        </div>
+      </div>
     </section>
   );
 
@@ -138,6 +200,67 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         {status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}
       </div>
 
+      {/* Real-time Pipeline Stage Timings Card */}
+      <div className="status-timings-card">
+        <div className="status-timings-header">
+          <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
+            ⚡ Real-time Pipeline Timings
+          </span>
+          <span className="timing-badge">
+            {status.status === "completed"
+              ? `Total: ${(status.total_time_sec ?? elapsedSec).toFixed(2)}s`
+              : `⏱️ Elapsed: ${elapsedSec.toFixed(1)}s`}
+          </span>
+        </div>
+        <div className="status-timings-grid">
+          {/* 1. Ingestion Phase */}
+          <div className="status-timing-item">
+            <span className="status-timing-label">📥 Data Ingestion</span>
+            <span className="status-timing-value">
+              {status.ingestion_time_sec != null ? (
+                <>✓ {status.ingestion_time_sec.toFixed(3)}s</>
+              ) : status.status === "queued" ? (
+                <span className="timing-pulsing">Ingesting files…</span>
+              ) : (
+                "Done"
+              )}
+            </span>
+          </div>
+
+          {/* 2. Extraction Phase */}
+          <div className="status-timing-item">
+            <span className="status-timing-label">📄 Data Extraction</span>
+            <span className="status-timing-value">
+              {status.extraction_time_sec != null ? (
+                <>✓ {status.extraction_time_sec.toFixed(3)}s</>
+              ) : status.status === "extracting" ? (
+                <span className="timing-pulsing">Extracting text & PII…</span>
+              ) : status.status === "queued" ? (
+                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span>
+              ) : (
+                "Done"
+              )}
+            </span>
+          </div>
+
+          {/* 3. Processing Phase */}
+          <div className="status-timing-item">
+            <span className="status-timing-label">🧠 Data Processing</span>
+            <span className="status-timing-value">
+              {status.processing_time_sec != null ? (
+                <>✓ {status.processing_time_sec.toFixed(3)}s</>
+              ) : status.status === "scoring" ? (
+                <span className="timing-pulsing">AI Evaluating & Scoring…</span>
+              ) : status.status === "completed" ? (
+                "Done"
+              ) : (
+                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span>
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {status.failed_files > 0 && (
         <div style={{ marginTop: "16px", padding: "16px 18px", background: "var(--bad-soft, #EEEBFA)", border: "1px solid var(--color-coral-red, #29136C)", borderRadius: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
@@ -169,3 +292,4 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
     </div>
   );
 }
+

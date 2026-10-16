@@ -144,6 +144,10 @@ class ProcessingFileResult(BaseModel):
     safety_passed: Optional[bool] = None
     safety_reason: Optional[str] = None
     error: Optional[str] = None
+    ingestion_time_sec: Optional[float] = None
+    extraction_time_sec: Optional[float] = None
+    processing_time_sec: Optional[float] = None
+    total_time_sec: Optional[float] = None
 
 
 class ProcessingResponse(BaseModel):
@@ -154,6 +158,10 @@ class ProcessingResponse(BaseModel):
     accepted_files: int
     rejected_files: int
     files: List[ProcessingFileResult]
+    ingestion_time_sec: Optional[float] = None
+    extraction_time_sec: Optional[float] = None
+    processing_time_sec: Optional[float] = None
+    total_time_sec: Optional[float] = None
 
 
 # ─── Status polling (M.9) ────────────────────────────────────────────────────
@@ -167,6 +175,11 @@ class BatchStatusResponse(BaseModel):
     pre_filtered_count: int = 0
     progress_percentage: float = 0.0
     error_logs: List[str] = []
+    ingestion_time_sec: Optional[float] = None
+    extraction_time_sec: Optional[float] = None
+    processing_time_sec: Optional[float] = None
+    total_time_sec: Optional[float] = None
+    elapsed_time_sec: Optional[float] = None
 
 
 # ─── Evaluation result (M.7 / M.8) ───────────────────────────────────────────

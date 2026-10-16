@@ -73,6 +73,11 @@ async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_ro
         pre_filtered_count=int(row["pre_filtered_count"] or 0),
         progress_percentage=round(100 * processed / total, 1) if total else 0,
         error_logs=errors,
+        ingestion_time_sec=row.get("ingestion_time_sec"),
+        extraction_time_sec=row.get("extraction_time_sec"),
+        processing_time_sec=row.get("processing_time_sec"),
+        total_time_sec=row.get("total_time_sec"),
+        elapsed_time_sec=row.get("elapsed_time_sec"),
     )
 
 @router.get("/{batch_id}/results", response_model=BatchResultsResponse)
