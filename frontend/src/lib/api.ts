@@ -35,6 +35,7 @@ export interface BatchStatus {
   processing_time_sec?: number | null;
   total_time_sec?: number | null;
   elapsed_time_sec?: number | null;
+  current_stage?: "ingestion" | "extraction" | "processing" | "completed" | null;
 }
 
 export interface CandidateResult {

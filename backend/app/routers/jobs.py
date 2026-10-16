@@ -78,6 +78,7 @@ async def get_batch_status(batch_id: str, user: CurrentUser = Depends(require_ro
         processing_time_sec=row.get("processing_time_sec"),
         total_time_sec=row.get("total_time_sec"),
         elapsed_time_sec=row.get("elapsed_time_sec"),
+        current_stage=row.get("current_stage"),
     )
 
 @router.get("/{batch_id}/results", response_model=BatchResultsResponse)

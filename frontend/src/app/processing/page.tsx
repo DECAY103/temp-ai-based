@@ -24,36 +24,50 @@ function OutputCard({ result }: { result: ProcessingResult }) {
         </div>
       </div>
 
-      {/* Real-time Pipeline Execution Timings Card */}
+      {/* Independent Timing Breakdown Card */}
       <div className="status-timings-card" style={{ marginBottom: "20px" }}>
         <div className="status-timings-header">
           <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
-            ⚡ Pipeline Execution Timings
+            Process Breakdown and Time Spent
           </span>
           {result.total_time_sec != null && (
             <span className="timing-badge">
-              Total: {result.total_time_sec.toFixed(3)}s
+              Total Turnaround: {result.total_time_sec.toFixed(3)}s
             </span>
           )}
         </div>
         <div className="status-timings-grid">
           <div className="status-timing-item">
-            <span className="status-timing-label">📥 Data Ingestion</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 1: Data Ingestion</span>
+              <span className="status-timing-status completed">Completed</span>
+            </div>
             <span className="status-timing-value">
-              {result.ingestion_time_sec != null ? `✓ ${result.ingestion_time_sec.toFixed(3)}s` : "Done"}
+              {result.ingestion_time_sec != null ? `Time spent: ${result.ingestion_time_sec.toFixed(3)}s` : "Time spent: Done"}
             </span>
+            <span className="status-timing-subtext">File validation & unpacking</span>
           </div>
+
           <div className="status-timing-item">
-            <span className="status-timing-label">📄 Data Extraction</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 2: Data Extraction</span>
+              <span className="status-timing-status completed">Completed</span>
+            </div>
             <span className="status-timing-value">
-              {result.extraction_time_sec != null ? `✓ ${result.extraction_time_sec.toFixed(3)}s` : "Done"}
+              {result.extraction_time_sec != null ? `Time spent: ${result.extraction_time_sec.toFixed(3)}s` : "Time spent: Done"}
             </span>
+            <span className="status-timing-subtext">PDF text extraction</span>
           </div>
+
           <div className="status-timing-item">
-            <span className="status-timing-label">🧠 Data Processing</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 3: Data Processing</span>
+              <span className="status-timing-status completed">Completed</span>
+            </div>
             <span className="status-timing-value">
-              {result.processing_time_sec != null ? `✓ ${result.processing_time_sec.toFixed(3)}s` : "Done"}
+              {result.processing_time_sec != null ? `Time spent: ${result.processing_time_sec.toFixed(3)}s` : "Time spent: Done"}
             </span>
+            <span className="status-timing-subtext">PII anonymisation & safety scan</span>
           </div>
         </div>
       </div>
@@ -85,10 +99,10 @@ function OutputCard({ result }: { result: ProcessingResult }) {
 
           {(file.extraction_time_sec != null || file.processing_time_sec != null) && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", marginTop: "10px", fontSize: "0.8rem", color: "var(--muted)" }}>
-              {file.ingestion_time_sec != null && <span>📥 Ingestion: <strong style={{ color: "var(--ink)" }}>{file.ingestion_time_sec.toFixed(4)}s</strong></span>}
-              {file.extraction_time_sec != null && <span>📄 Extraction: <strong style={{ color: "var(--ink)" }}>{file.extraction_time_sec.toFixed(4)}s</strong></span>}
-              {file.processing_time_sec != null && <span>🧠 Processing: <strong style={{ color: "var(--ink)" }}>{file.processing_time_sec.toFixed(4)}s</strong></span>}
-              {file.total_time_sec != null && <span>⏱️ Turnaround: <strong style={{ color: "var(--ink)" }}>{file.total_time_sec.toFixed(4)}s</strong></span>}
+              {file.ingestion_time_sec != null && <span>Ingestion: <strong style={{ color: "var(--ink)" }}>{file.ingestion_time_sec.toFixed(4)}s</strong></span>}
+              {file.extraction_time_sec != null && <span>Extraction: <strong style={{ color: "var(--ink)" }}>{file.extraction_time_sec.toFixed(4)}s</strong></span>}
+              {file.processing_time_sec != null && <span>Processing: <strong style={{ color: "var(--ink)" }}>{file.processing_time_sec.toFixed(4)}s</strong></span>}
+              {file.total_time_sec != null && <span>Turnaround: <strong style={{ color: "var(--ink)" }}>{file.total_time_sec.toFixed(4)}s</strong></span>}
             </div>
           )}
 
@@ -149,7 +163,7 @@ export default function ProcessingPage() {
     setError(null);
     setResult(null);
 
-    console.log(`\n🚀 [Preview Processing Start] File: ${file.name} (${file.size} bytes)`);
+    console.log(`\n[PREVIEW PROCESSING STARTED] File: ${file.name} (${file.size} bytes)`);
 
     try {
       const res = await processingApi.preview(file);
@@ -157,11 +171,12 @@ export default function ProcessingPage() {
 
       console.log(
         `================================================================================\n` +
-        `🏁 [Preview Processing Complete] Total Turnaround: ${res.total_time_sec != null ? res.total_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-        `   ├─ Data Ingestion Time : ${res.ingestion_time_sec != null ? res.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-        `   ├─ Data Extraction Time: ${res.extraction_time_sec != null ? res.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-        `   ├─ Data Processing Time: ${res.processing_time_sec != null ? res.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-        `   └─ Total Files Processed: ${res.total_files} (${res.accepted_files} accepted, ${res.rejected_files} flagged)\n` +
+        `[PREVIEW PROCESSING COMPLETE] File: ${file.name}\n` +
+        `  - Time spent on Data Ingestion : ${res.ingestion_time_sec != null ? res.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `  - Time spent on Data Extraction: ${res.extraction_time_sec != null ? res.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `  - Time spent on Data Processing: ${res.processing_time_sec != null ? res.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `  - Total turnaround time        : ${res.total_time_sec != null ? res.total_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+        `  - Total Files Processed        : ${res.total_files} (${res.accepted_files} accepted, ${res.rejected_files} flagged)\n` +
         `================================================================================`
       );
     } catch (err) {
@@ -197,24 +212,44 @@ export default function ProcessingPage() {
             <div className="status-timings-card" style={{ marginTop: "16px" }}>
               <div className="status-timings-header">
                 <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
-                  ⚡ Real-time Ingestion & Processing
+                  Process Breakdown and Time Spent
                 </span>
                 <span className="timing-badge">
-                  ⏱️ Elapsed: {loadingElapsed.toFixed(1)}s
+                  Total Elapsed: {loadingElapsed.toFixed(1)}s
                 </span>
               </div>
               <div className="status-timings-grid">
                 <div className="status-timing-item">
-                  <span className="status-timing-label">📥 Data Ingestion</span>
-                  <span className="status-timing-value"><span className="timing-pulsing">Verifying & Unpacking…</span></span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span className="status-timing-label">Part 1: Data Ingestion</span>
+                    <span className="status-timing-status running">In Progress</span>
+                  </div>
+                  <span className="status-timing-value">
+                    Time spent: <span className="timing-pulsing">{loadingElapsed.toFixed(1)}s</span>
+                  </span>
+                  <span className="status-timing-subtext">Verifying file & payload</span>
                 </div>
+
                 <div className="status-timing-item">
-                  <span className="status-timing-label">📄 Data Extraction</span>
-                  <span className="status-timing-value"><span className="timing-pulsing">Extracting text…</span></span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span className="status-timing-label">Part 2: Data Extraction</span>
+                    <span className="status-timing-status running">In Progress</span>
+                  </div>
+                  <span className="status-timing-value">
+                    Time spent: <span className="timing-pulsing">Extracting…</span>
+                  </span>
+                  <span className="status-timing-subtext">Extracting PDF text</span>
                 </div>
+
                 <div className="status-timing-item">
-                  <span className="status-timing-label">🧠 Data Processing</span>
-                  <span className="status-timing-value"><span className="timing-pulsing">PII & Safety scan…</span></span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span className="status-timing-label">Part 3: Data Processing</span>
+                    <span className="status-timing-status running">In Progress</span>
+                  </div>
+                  <span className="status-timing-value">
+                    Time spent: <span className="timing-pulsing">Scanning…</span>
+                  </span>
+                  <span className="status-timing-subtext">PII anonymisation & scan</span>
                 </div>
               </div>
             </div>

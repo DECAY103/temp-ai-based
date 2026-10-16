@@ -2958,6 +2958,33 @@ button, a, input, select, textarea {
   align-items: center;
   gap: 6px;
 }
+.status-timing-subtext {
+  font-size: 0.76rem;
+  color: var(--muted, #4729A3);
+  font-weight: 500;
+}
+.status-timing-status {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-left: auto;
+}
+.status-timing-status.completed {
+  background: var(--good-soft, #e6f7ec);
+  color: var(--good, #147d3c);
+}
+.status-timing-status.running {
+  background: var(--pale-lavender, #f0ebfc);
+  color: var(--primary-purple, #6C38FF);
+}
+.status-timing-status.pending {
+  background: var(--surface-soft, #f4f2f9);
+  color: var(--muted, #73699c);
+}
 .timing-badge {
   font-size: 0.82rem;
   font-weight: 700;

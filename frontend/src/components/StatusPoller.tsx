@@ -33,8 +33,9 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   const [copied, setCopied] = useState(false);
   const startTimeRef = useRef<number>(Date.now());
   const [elapsedSec, setElapsedSec] = useState<number>(0);
+  const loggedStagesRef = useRef<Set<string>>(new Set());
 
-  // Live stopwatch counter while batch is running
+  // Continuous timer while batch is running
   useEffect(() => {
     const start = startTimeRef.current;
     const interval = setInterval(() => {
@@ -54,26 +55,43 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         setStatus(data);
 
         const currentElapsed = Math.round(((Date.now() - startTimeRef.current) / 1000) * 10) / 10;
+
+        // Independently log time spent on each part of the process
+        if (data.ingestion_time_sec != null && !loggedStagesRef.current.has("ingestion")) {
+          loggedStagesRef.current.add("ingestion");
+          console.log(`[DATA INGESTION COMPLETED] Batch ${batchId}: Time spent on Data Ingestion = ${data.ingestion_time_sec.toFixed(3)}s`);
+        }
+        if (data.extraction_time_sec != null && !loggedStagesRef.current.has("extraction")) {
+          loggedStagesRef.current.add("extraction");
+          console.log(`[DATA EXTRACTION COMPLETED] Batch ${batchId}: Time spent on Data Extraction = ${data.extraction_time_sec.toFixed(3)}s`);
+        }
+        if (data.processing_time_sec != null && !loggedStagesRef.current.has("processing")) {
+          loggedStagesRef.current.add("processing");
+          console.log(`[DATA PROCESSING COMPLETED] Batch ${batchId}: Time spent on Data Processing = ${data.processing_time_sec.toFixed(3)}s`);
+        }
+
+        // Comprehensive independent breakdown print
         console.log(
-          `⏱️ [Batch ${batchId}] Status: ${data.status.toUpperCase()} | ` +
-          `Ingestion: ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : 'in progress...'} | ` +
-          `Extraction: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : 'waiting/active...'} | ` +
-          `Processing: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : 'waiting/active...'} | ` +
-          `Elapsed: ${currentElapsed.toFixed(1)}s`
+          `[PIPELINE STATUS] Batch ${batchId} (${data.status.toUpperCase()})\n` +
+          `  - Time spent on Data Ingestion : ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : (data.status === 'queued' ? currentElapsed.toFixed(1) + 's (active)' : 'Pending')}\n` +
+          `  - Time spent on Data Extraction: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : (data.status === 'extracting' ? 'Active' : 'Pending')}\n` +
+          `  - Time spent on Data Processing: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : (data.status === 'scoring' ? 'Active' : 'Pending')}\n` +
+          `  - Total turnaround time        : ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s`
         );
 
         if (data.status === "completed") {
           console.log(
             `================================================================================\n` +
-            `🏁 [PIPELINE COMPLETE] Batch ${batchId} Turnaround Time: ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s\n` +
-            `   ├─ Data Ingestion Time : ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-            `   ├─ Data Extraction Time: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-            `   ├─ Data Processing Time: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
-            `   └─ Total Elapsed Time  : ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s\n` +
+            `[PIPELINE COMPLETE] Batch ${batchId} - Time spent on each part of the process:\n` +
+            `  Time spent on Data Ingestion : ${data.ingestion_time_sec != null ? data.ingestion_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `  Time spent on Data Extraction: ${data.extraction_time_sec != null ? data.extraction_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `  Time spent on Data Processing: ${data.processing_time_sec != null ? data.processing_time_sec.toFixed(3) + 's' : 'N/A'}\n` +
+            `  Total turnaround time        : ${(data.total_time_sec ?? currentElapsed).toFixed(3)}s\n` +
             `================================================================================`
           );
           if (timer) clearInterval(timer);
         } else if (data.status === "failed") {
+          console.log(`[PIPELINE FAILED] Batch ${batchId} failed after ${currentElapsed.toFixed(3)}s`);
           if (timer) clearInterval(timer);
         }
       } catch (err) {
@@ -105,49 +123,86 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
   }, [batchId]);
 
   if (error) return <p className="message error-message" role="alert">{error}</p>;
-  if (!status) return (
-    <section className="status-card" aria-busy="true">
-      <div className="status-heading">
-        <div>
-          <p className="eyebrow">Processing</p>
-          <h2>Preparing your files…</h2>
-        </div>
-        <span className="status-chip">Queued</span>
-      </div>
-      <p className="field-help">This page updates automatically.</p>
 
-      <div className="status-timings-card">
-        <div className="status-timings-header">
-          <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
-            ⚡ Pipeline Stage Timings
-          </span>
-          <span className="timing-badge">
-            ⏱️ Elapsed: {elapsedSec.toFixed(1)}s
-          </span>
+  if (!status) {
+    return (
+      <section className="status-card" aria-busy="true">
+        <div className="status-heading">
+          <div>
+            <p className="eyebrow">Processing</p>
+            <h2>Preparing your files…</h2>
+          </div>
+          <span className="status-chip">Queued</span>
         </div>
-        <div className="status-timings-grid">
-          <div className="status-timing-item">
-            <span className="status-timing-label">📥 Data Ingestion</span>
-            <span className="status-timing-value"><span className="timing-pulsing">Starting…</span></span>
+        <p className="field-help">This page updates automatically.</p>
+
+        <div className="status-timings-card">
+          <div className="status-timings-header">
+            <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
+              Process Breakdown and Time Spent
+            </span>
+            <span className="timing-badge">
+              Total Elapsed: {elapsedSec.toFixed(1)}s
+            </span>
           </div>
-          <div className="status-timing-item">
-            <span className="status-timing-label">📄 Data Extraction</span>
-            <span className="status-timing-value"><span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span></span>
-          </div>
-          <div className="status-timing-item">
-            <span className="status-timing-label">🧠 Data Processing</span>
-            <span className="status-timing-value"><span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span></span>
+          <div className="status-timings-grid">
+            <div className="status-timing-item">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="status-timing-label">Part 1: Data Ingestion</span>
+                <span className="status-timing-status running">In Progress</span>
+              </div>
+              <span className="status-timing-value">
+                Time spent: <span className="timing-pulsing">{elapsedSec.toFixed(1)}s</span>
+              </span>
+              <span className="status-timing-subtext">Validating file & payload</span>
+            </div>
+
+            <div className="status-timing-item">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="status-timing-label">Part 2: Data Extraction</span>
+                <span className="status-timing-status pending">Waiting</span>
+              </div>
+              <span className="status-timing-value" style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.85rem" }}>
+                Time spent: Pending
+              </span>
+              <span className="status-timing-subtext">Text extraction & sanitisation</span>
+            </div>
+
+            <div className="status-timing-item">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="status-timing-label">Part 3: Data Processing</span>
+                <span className="status-timing-status pending">Waiting</span>
+              </div>
+              <span className="status-timing-value" style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.85rem" }}>
+                Time spent: Pending
+              </span>
+              <span className="status-timing-subtext">AI evaluation & scoring</span>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
+      </section>
+    );
+  }
 
   function copyBatchId() {
     navigator.clipboard.writeText(batchId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  // Independent time spent calculations for each part
+  const ingestionTime = status.ingestion_time_sec;
+  const extractionTime = status.extraction_time_sec;
+  const processingTime = status.processing_time_sec;
+
+  // Active spent duration for extraction (if currently extracting)
+  const extractionActiveSpent = Math.max(0, elapsedSec - (ingestionTime || 0));
+  // Active spent duration for processing (if currently scoring)
+  const processingActiveSpent = Math.max(0, elapsedSec - (ingestionTime || 0) - (extractionTime || 0));
+
+  const isIngestionDone = ingestionTime != null;
+  const isExtractionDone = extractionTime != null && status.status !== "extracting";
+  const isProcessingDone = processingTime != null && status.status === "completed";
 
   return (
     <div className="status-card">
@@ -200,63 +255,78 @@ export function StatusPoller({ batchId, role = "recruiter" }: StatusPollerProps)
         {status.pre_filtered_count > 0 && <span>{status.pre_filtered_count} pre-filtered</span>}
       </div>
 
-      {/* Real-time Pipeline Stage Timings Card */}
+      {/* Independent Timing Breakdown Card */}
       <div className="status-timings-card">
         <div className="status-timings-header">
           <span style={{ fontSize: "0.8rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary-purple)" }}>
-            ⚡ Real-time Pipeline Timings
+            Process Breakdown and Time Spent
           </span>
           <span className="timing-badge">
             {status.status === "completed"
-              ? `Total: ${(status.total_time_sec ?? elapsedSec).toFixed(2)}s`
-              : `⏱️ Elapsed: ${elapsedSec.toFixed(1)}s`}
+              ? `Total Turnaround: ${(status.total_time_sec ?? elapsedSec).toFixed(2)}s`
+              : `Total Elapsed: ${elapsedSec.toFixed(1)}s`}
           </span>
         </div>
+
         <div className="status-timings-grid">
-          {/* 1. Ingestion Phase */}
+          {/* Part 1: Data Ingestion */}
           <div className="status-timing-item">
-            <span className="status-timing-label">📥 Data Ingestion</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 1: Data Ingestion</span>
+              <span className={`status-timing-status ${isIngestionDone ? "completed" : status.status === "queued" ? "running" : "completed"}`}>
+                {isIngestionDone ? "Completed" : status.status === "queued" ? "In Progress" : "Completed"}
+              </span>
+            </div>
             <span className="status-timing-value">
-              {status.ingestion_time_sec != null ? (
-                <>✓ {status.ingestion_time_sec.toFixed(3)}s</>
+              {ingestionTime != null ? (
+                <>Time spent: {ingestionTime.toFixed(3)}s</>
               ) : status.status === "queued" ? (
-                <span className="timing-pulsing">Ingesting files…</span>
+                <>Time spent: <span className="timing-pulsing">{elapsedSec.toFixed(1)}s</span></>
               ) : (
-                "Done"
+                <>Time spent: Done</>
               )}
             </span>
+            <span className="status-timing-subtext">Validating file & payload</span>
           </div>
 
-          {/* 2. Extraction Phase */}
+          {/* Part 2: Data Extraction */}
           <div className="status-timing-item">
-            <span className="status-timing-label">📄 Data Extraction</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 2: Data Extraction</span>
+              <span className={`status-timing-status ${isExtractionDone ? "completed" : status.status === "extracting" ? "running" : "pending"}`}>
+                {isExtractionDone ? "Completed" : status.status === "extracting" ? "In Progress" : "Pending"}
+              </span>
+            </div>
             <span className="status-timing-value">
-              {status.extraction_time_sec != null ? (
-                <>✓ {status.extraction_time_sec.toFixed(3)}s</>
+              {extractionTime != null ? (
+                <>Time spent: {extractionTime.toFixed(3)}s</>
               ) : status.status === "extracting" ? (
-                <span className="timing-pulsing">Extracting text & PII…</span>
-              ) : status.status === "queued" ? (
-                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span>
+                <>Time spent: <span className="timing-pulsing">{extractionActiveSpent.toFixed(1)}s</span></>
               ) : (
-                "Done"
+                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.85rem" }}>Time spent: Pending</span>
               )}
             </span>
+            <span className="status-timing-subtext">Text extraction & sanitisation</span>
           </div>
 
-          {/* 3. Processing Phase */}
+          {/* Part 3: Data Processing */}
           <div className="status-timing-item">
-            <span className="status-timing-label">🧠 Data Processing</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="status-timing-label">Part 3: Data Processing</span>
+              <span className={`status-timing-status ${isProcessingDone ? "completed" : status.status === "scoring" ? "running" : "pending"}`}>
+                {isProcessingDone ? "Completed" : status.status === "scoring" ? "In Progress" : "Pending"}
+              </span>
+            </div>
             <span className="status-timing-value">
-              {status.processing_time_sec != null ? (
-                <>✓ {status.processing_time_sec.toFixed(3)}s</>
+              {processingTime != null ? (
+                <>Time spent: {processingTime.toFixed(3)}s</>
               ) : status.status === "scoring" ? (
-                <span className="timing-pulsing">AI Evaluating & Scoring…</span>
-              ) : status.status === "completed" ? (
-                "Done"
+                <>Time spent: <span className="timing-pulsing">{processingActiveSpent.toFixed(1)}s</span></>
               ) : (
-                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.82rem" }}>Waiting</span>
+                <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: "0.85rem" }}>Time spent: Pending</span>
               )}
             </span>
+            <span className="status-timing-subtext">AI evaluation & scoring</span>
           </div>
         </div>
       </div>

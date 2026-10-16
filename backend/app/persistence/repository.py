@@ -315,13 +315,27 @@ _batch_timings: dict[str, dict[str, Any]] = {}
 
 def start_batch_timing(batch_id: str) -> None:
     import time
+    now = time.perf_counter()
     _batch_timings[str(batch_id)] = {
-        "start_time": time.perf_counter(),
+        "start_time": now,
+        "current_stage": "ingestion",
+        "ingestion_start_time": now,
         "ingestion_time_sec": None,
+        "extraction_start_time": None,
         "extraction_time_sec": None,
+        "processing_start_time": None,
         "processing_time_sec": None,
         "total_time_sec": None,
     }
+
+
+def set_batch_stage(batch_id: str, stage: str) -> None:
+    import time
+    bid = str(batch_id)
+    if bid not in _batch_timings:
+        start_batch_timing(bid)
+    _batch_timings[bid]["current_stage"] = stage
+    _batch_timings[bid][f"{stage}_start_time"] = time.perf_counter()
 
 
 def set_batch_timing_stage(batch_id: str, stage: str, elapsed_sec: float) -> None:
@@ -335,8 +349,19 @@ def get_batch_timings(batch_id: str) -> dict[str, Any]:
     import time
     bid = str(batch_id)
     timings = dict(_batch_timings.get(bid, {}))
+    now = time.perf_counter()
     if "start_time" in timings:
-        timings["elapsed_time_sec"] = round(time.perf_counter() - timings["start_time"], 1)
+        timings["elapsed_time_sec"] = round(now - timings["start_time"], 3)
+
+    cur = timings.get("current_stage")
+    if cur and cur != "completed":
+        st_key = f"{cur}_start_time"
+        st = timings.get(st_key)
+        if st is not None and timings.get(f"{cur}_time_sec") is None:
+            active_spent = round(now - st, 3)
+            timings[f"{cur}_time_sec"] = active_spent
+            timings["current_stage_spent_sec"] = active_spent
+
     return timings
 
 
@@ -426,6 +451,7 @@ async def get_batch_status(batch_id: str) -> Optional[dict]:
                 "processing_time_sec": mem.get("processing_time_sec"),
                 "total_time_sec": mem.get("total_time_sec"),
                 "elapsed_time_sec": mem.get("elapsed_time_sec"),
+                "current_stage": mem.get("current_stage"),
             }
         return None
     res = dict(row)
@@ -435,6 +461,7 @@ async def get_batch_status(batch_id: str) -> Optional[dict]:
     res["processing_time_sec"] = res.get("processing_time_sec") or mem.get("processing_time_sec")
     res["total_time_sec"] = res.get("total_time_sec") or mem.get("total_time_sec")
     res["elapsed_time_sec"] = mem.get("elapsed_time_sec")
+    res["current_stage"] = mem.get("current_stage")
     return res
 
 

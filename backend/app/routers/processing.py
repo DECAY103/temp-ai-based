@@ -98,18 +98,18 @@ async def preview_processing(
     filename = file.filename or "uploaded-file"
 
     print(f"\n================================================================================")
-    print(f"🚀 [PREVIEW PROCESSING START] File: {filename} ({len(file_bytes)} bytes)")
+    print(f"[PREVIEW PROCESSING STARTED] File: {filename} ({len(file_bytes)} bytes)")
     print(f"================================================================================")
 
     if filename.lower().endswith(".zip"):
         try:
             pdf_names = check_zip(file_bytes)
             ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
-            print(f"⏱️  [DATA INGESTION] ZIP archive verified and unpacked in {ingestion_time:.3f}s ({len(pdf_names)} candidate PDFs)")
+            print(f"[DATA INGESTION COMPLETED] Time spent on Data Ingestion = {ingestion_time:.3f}s (ZIP archive unpacked, {len(pdf_names)} candidate PDFs)")
         except ValidationError as exc:
             ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
             total_time = round(time.perf_counter() - t_total_start, 3)
-            print(f"❌ [DATA INGESTION FAILED] ZIP validation error: {exc}")
+            print(f"[DATA INGESTION FAILED] ZIP validation error after {ingestion_time:.3f}s: {exc}")
             results = [ProcessingFileResult(
                 filename=filename,
                 status="failed",
@@ -137,7 +137,7 @@ async def preview_processing(
         input_type = "zip"
     else:
         ingestion_time = round(time.perf_counter() - t_ingest_start, 3)
-        print(f"⏱️  [DATA INGESTION] Single PDF received and staged in {ingestion_time:.3f}s")
+        print(f"[DATA INGESTION COMPLETED] Time spent on Data Ingestion = {ingestion_time:.3f}s (Single PDF staged)")
         results = [_process_pdf(filename, file_bytes)]
         input_type = "pdf"
 
@@ -145,13 +145,14 @@ async def preview_processing(
     total_proc_time = round(sum(r.processing_time_sec or 0.0 for r in results), 3)
     total_time = round(time.perf_counter() - t_total_start, 3)
 
-    print(f"⏱️  [DATA EXTRACTION] Extracted text across {len(results)} file(s) in {total_extract_time:.3f}s")
-    print(f"⏱️  [DATA PROCESSING] PII anonymisation and adversarial scan took {total_proc_time:.3f}s")
+    print(f"[DATA EXTRACTION COMPLETED] Time spent on Data Extraction = {total_extract_time:.3f}s across {len(results)} file(s)")
+    print(f"[DATA PROCESSING COMPLETED] Time spent on Data Processing = {total_proc_time:.3f}s (PII sanitisation & safety scans)")
     print(f"================================================================================")
-    print(f"🏁 [PREVIEW COMPLETE] Total preview turnaround time: {total_time:.3f}s")
-    print(f"   ├─ Data Ingestion Time : {ingestion_time:.3f}s")
-    print(f"   ├─ Data Extraction Time: {total_extract_time:.3f}s")
-    print(f"   └─ Data Processing Time: {total_proc_time:.3f}s")
+    print(f"[PREVIEW PROCESSING COMPLETE] Time spent on each part of the process:")
+    print(f"   - Time spent on Data Ingestion : {ingestion_time:.3f}s")
+    print(f"   - Time spent on Data Extraction: {total_extract_time:.3f}s")
+    print(f"   - Time spent on Data Processing: {total_proc_time:.3f}s")
+    print(f"   - Total turnaround time        : {total_time:.3f}s")
     print(f"================================================================================\n")
 
     accepted_files = sum(result.status == "accepted" for result in results)

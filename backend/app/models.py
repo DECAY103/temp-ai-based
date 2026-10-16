@@ -180,6 +180,7 @@ class BatchStatusResponse(BaseModel):
     processing_time_sec: Optional[float] = None
     total_time_sec: Optional[float] = None
     elapsed_time_sec: Optional[float] = None
+    current_stage: Optional[str] = None
 
 
 # ─── Evaluation result (M.7 / M.8) ───────────────────────────────────────────
