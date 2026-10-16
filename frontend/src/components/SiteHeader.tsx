@@ -24,8 +24,15 @@ export function SiteHeader() {
           return [k, decodeURIComponent(v.join("="))];
         })
     );
-    const hasToken = Boolean(cookies["logged_in"]);
-    const userRole = cookies["user_role"] || (typeof window !== "undefined" ? localStorage.getItem("user_role") : null);
+    const hasToken = Boolean(
+      cookies["logged_in"] ||
+      cookies["access_token"] ||
+      (typeof window !== "undefined" && localStorage.getItem("access_token"))
+    );
+    const userRole =
+      cookies["user_role"] ||
+      (typeof window !== "undefined" ? localStorage.getItem("user_role") : null) ||
+      (hasToken ? "recruiter" : null);
     setIsLoggedIn(hasToken);
     setRole(userRole);
   }, [pathname]);
@@ -118,7 +125,7 @@ export function SiteHeader() {
                     </a>
                   )}
                   {role === "recruiter" && !pathname.startsWith("/admin") && (
-                    <a href="/recruiter">Recruiter Dashboard</a>
+                    <a href="/recruiter">Recruiter Portal</a>
                   )}
                   {role === "candidate" && !pathname.startsWith("/admin") && (
                     <a href="/candidate">Candidate Portal</a>
@@ -234,7 +241,7 @@ export function SiteHeader() {
                           <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
-                        <span>Recruiter Dashboard</span>
+                        <span>Recruiter Portal</span>
                       </a>
                     )}
                     {role === "candidate" && (

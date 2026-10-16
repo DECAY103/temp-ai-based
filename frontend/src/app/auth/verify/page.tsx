@@ -52,7 +52,7 @@ function VerifyForm() {
         localStorage.setItem("user_last_login", last_login_at || "first_login");
       }
       const destination = userRole === "admin" ? "/admin" : userRole === "recruiter" ? "/recruiter" : "/candidate";
-      router.push(destination);
+      window.location.href = destination;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed. Please check the code and try again.");
       setLoading(false);

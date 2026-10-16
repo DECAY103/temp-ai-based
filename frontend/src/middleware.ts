@@ -18,9 +18,17 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // TODO (Person 1 — M.2): Replace stub with real JWT verification.
-  const token = request.cookies.get("access_token")?.value;
+  const token = request.cookies.get("access_token")?.value || request.cookies.get("logged_in")?.value;
+  const role = request.cookies.get("user_role")?.value;
 
+  // If user is already authenticated and visits /auth/login or /auth/verify,
+  // redirect them directly to their role-specific portal
+  if (token && (pathname === "/auth/login" || pathname === "/auth/verify")) {
+    const destination = role === "admin" ? "/admin" : role === "candidate" ? "/candidate" : "/recruiter";
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
+
+  // Protected portal routes: /candidate, /recruiter, /admin, /processing
   if (!token && !pathname.startsWith("/auth")) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
@@ -29,5 +37,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/candidate/:path*", "/recruiter/:path*", "/processing/:path*", "/admin/:path*"],
+  matcher: [
+    "/candidate/:path*",
+    "/recruiter/:path*",
+    "/processing/:path*",
+    "/admin/:path*",
+    "/auth/login",
+    "/auth/verify",
+  ],
 };

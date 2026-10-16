@@ -27,10 +27,37 @@ export default function LoginPage() {
 
   useEffect(() => {
     router.prefetch("/auth/verify");
+    router.prefetch("/recruiter");
+    router.prefetch("/candidate");
+    router.prefetch("/admin");
+
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("deleted") === "1") {
         setDeletedNotice(true);
+        return;
+      }
+      if (params.get("switch") === "1") {
+        return;
+      }
+
+      // Check if user is already authenticated
+      const cookies = Object.fromEntries(
+        document.cookie
+          .split("; ")
+          .filter(Boolean)
+          .map((c) => {
+            const [k, ...v] = c.split("=");
+            return [k, decodeURIComponent(v.join("="))];
+          })
+      );
+      const token = cookies["access_token"] || localStorage.getItem("access_token");
+      const loggedIn = Boolean(cookies["logged_in"] || token);
+      const userRole = cookies["user_role"] || localStorage.getItem("user_role") || "recruiter";
+
+      if (loggedIn && token) {
+        const destination = userRole === "admin" ? "/admin" : userRole === "candidate" ? "/candidate" : "/recruiter";
+        window.location.href = destination;
       }
     }
   }, [router]);
