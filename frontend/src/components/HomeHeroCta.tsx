@@ -13,6 +13,9 @@ import Link from "next/link";
 export function HomeHeroCta() {
   const [portalHref, setPortalHref] = useState("/auth/login");
   const [portalLabel, setPortalLabel] = useState("Open Screening Portal");
+  const [secondaryHref, setSecondaryHref] = useState("/candidate");
+  const [secondaryLabel, setSecondaryLabel] = useState("Candidate Portal");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -25,24 +28,40 @@ export function HomeHeroCta() {
             return [k, decodeURIComponent(v.join("="))];
           })
       );
-      const token = cookies["access_token"] || localStorage.getItem("access_token");
-      const isLoggedIn = Boolean(cookies["logged_in"] || token);
-      const role = cookies["user_role"] || localStorage.getItem("user_role");
+      const isLoggedIn = Boolean(
+        cookies["logged_in"] ||
+        cookies["access_token"] ||
+        localStorage.getItem("access_token")
+      );
+      const role =
+        cookies["user_role"] ||
+        localStorage.getItem("user_role") ||
+        (isLoggedIn ? "recruiter" : null);
 
-      if (isLoggedIn && token) {
+      if (isLoggedIn && role) {
+        setUserRole(role);
         if (role === "admin") {
           setPortalHref("/admin");
           setPortalLabel("Open Admin Portal");
+          setSecondaryHref("");
+          setSecondaryLabel("");
         } else if (role === "candidate") {
           setPortalHref("/candidate");
           setPortalLabel("Open Candidate Portal");
+          setSecondaryHref("");
+          setSecondaryLabel("");
         } else {
           setPortalHref("/recruiter");
           setPortalLabel("Open Recruiter Portal");
+          setSecondaryHref("");
+          setSecondaryLabel("");
         }
       } else {
         setPortalHref("/auth/login");
         setPortalLabel("Open Screening Portal");
+        setSecondaryHref("/candidate");
+        setSecondaryLabel("Candidate Portal");
+        setUserRole(null);
       }
     }
   }, []);
@@ -67,24 +86,37 @@ export function HomeHeroCta() {
         </svg>
       </Link>
 
-      <Link className="hero-pill-btn hero-pill-btn--secondary" href="/candidate">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <rect width="20" height="14" x="2" y="3" rx="2" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-          <line x1="12" y1="17" x2="12" y2="21" />
-        </svg>
-        <span>Candidate Portal</span>
-      </Link>
+      {secondaryHref && secondaryLabel && (
+        <Link className="hero-pill-btn hero-pill-btn--secondary" href={secondaryHref}>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            {userRole === "admin" ? (
+              <>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </>
+            ) : (
+              <>
+                <rect width="20" height="14" x="2" y="3" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </>
+            )}
+          </svg>
+          <span>{secondaryLabel}</span>
+        </Link>
+      )}
     </div>
   );
 }

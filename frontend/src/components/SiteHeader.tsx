@@ -57,12 +57,15 @@ export function SiteHeader() {
     }
     document.cookie = "logged_in=; Max-Age=0; path=/";
     document.cookie = "user_role=; Max-Age=0; path=/";
+    document.cookie = "access_token=; Max-Age=0; path=/";
     if (typeof window !== "undefined") {
       localStorage.removeItem("user_role");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_last_login");
     }
     setIsLoggedIn(false);
     setRole(null);
-    router.push("/auth/login");
+    window.location.href = "/auth/login?logout=1";
   };
 
   const handleDeleteAccount = async () => {
@@ -72,13 +75,16 @@ export function SiteHeader() {
       await authApi.deleteAccount();
       document.cookie = "logged_in=; Max-Age=0; path=/";
       document.cookie = "user_role=; Max-Age=0; path=/";
+      document.cookie = "access_token=; Max-Age=0; path=/";
       if (typeof window !== "undefined") {
         localStorage.removeItem("user_role");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user_last_login");
       }
       setIsLoggedIn(false);
       setRole(null);
       setShowDeleteModal(false);
-      router.push("/auth/login?deleted=1");
+      window.location.href = "/auth/login?deleted=1";
     } catch (err: unknown) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete account");
       setIsDeleting(false);
@@ -110,12 +116,17 @@ export function SiteHeader() {
           </a>
           <nav className="site-nav site-nav--desktop" aria-label="Primary navigation">
             <a href="/#features-heading">Features</a>
-            <a href="/candidate">Candidate Portal</a>
+            {/* Show Candidate Portal when not logged in OR logged in as candidate */}
+            {(!isLoggedIn || role === "candidate") && (
+              <a href="/candidate">Candidate Portal</a>
+            )}
+            {/* Show Recruiter Portal only when logged in as recruiter */}
             {isLoggedIn && role === "recruiter" && (
               <a href="/recruiter">Recruiter Portal</a>
             )}
+            {/* Show Admin Portal only when logged in as admin */}
             {isLoggedIn && role === "admin" && (
-              <a href="/admin">Audit Logs</a>
+              <a href="/admin">Admin Portal</a>
             )}
           </nav>
 
@@ -128,6 +139,17 @@ export function SiteHeader() {
                   className="site-nav-btn"
                 >
                   Sign out
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(true);
+                    setDeleteError(null);
+                  }}
+                  className="site-nav-btn site-nav-btn--danger"
+                  title="Permanently delete your account"
+                >
+                  Delete account
                 </button>
                 <a
                   href={role === "admin" ? "/admin" : role === "candidate" ? "/candidate" : "/recruiter"}
@@ -197,7 +219,8 @@ export function SiteHeader() {
                     </span>
                   </div>
                   <div className="mobile-nav-links">
-                    {(role === "admin" || pathname.startsWith("/admin")) && (
+                    {/* Admin sees Admin Portal */}
+                    {role === "admin" && (
                       <a
                         href="/admin"
                         className={`mobile-nav-link ${pathname.startsWith("/admin") ? "mobile-nav-link--active" : ""}`}
@@ -208,9 +231,10 @@ export function SiteHeader() {
                           <path d="M3 9h18" />
                           <path d="M9 21V9" />
                         </svg>
-                        <span>Audit Logs & Admin</span>
+                        <span>Admin Portal</span>
                       </a>
                     )}
+                    {/* Recruiter sees only Recruiter Portal */}
                     {role === "recruiter" && (
                       <a
                         href="/recruiter"
@@ -226,6 +250,7 @@ export function SiteHeader() {
                         <span>Recruiter Portal</span>
                       </a>
                     )}
+                    {/* Candidate sees only Candidate Portal */}
                     {role === "candidate" && (
                       <a
                         href="/candidate"

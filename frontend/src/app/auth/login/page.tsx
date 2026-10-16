@@ -37,7 +37,7 @@ export default function LoginPage() {
         setDeletedNotice(true);
         return;
       }
-      if (params.get("switch") === "1") {
+      if (params.get("switch") === "1" || params.get("logout") === "1") {
         return;
       }
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
           })
       );
       const token = cookies["access_token"] || localStorage.getItem("access_token");
-      const loggedIn = Boolean(cookies["logged_in"] || token);
+      const loggedIn = Boolean(cookies["logged_in"] && token);
       const userRole = cookies["user_role"] || localStorage.getItem("user_role") || "recruiter";
 
       if (loggedIn && token) {

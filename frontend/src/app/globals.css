@@ -326,6 +326,14 @@ td.numeric, td[data-numeric="true"], .table-score, .numeric-cell, .text-right {
 .site-nav-btn:hover {
   color: var(--color-blue) !important;
 }
+.site-nav-btn--danger {
+  color: var(--color-coral-red, #DC3545) !important;
+  opacity: 0.9;
+}
+.site-nav-btn--danger:hover {
+  color: #B02A37 !important;
+  opacity: 1;
+}
 
 /* ─── Hero / Project Intro ───────────────────────────────────────────────── */
 .project-intro {
@@ -804,6 +812,7 @@ tbody tr:hover { background: var(--pale-lavender); }
 
 @media (max-width: 768px) {
   .site-nav--desktop { display: none !important; }
+  .header-actions .site-nav-btn { display: none !important; }
   .mobile-nav-toggle {
     display: inline-flex;
     align-items: center;

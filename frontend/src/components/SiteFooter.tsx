@@ -28,7 +28,7 @@ export function SiteFooter() {
             <ul className="footer-links">
               <li><Link href="/candidate">Candidate Portal</Link></li>
               <li><Link href="/recruiter">Recruiter Dashboard</Link></li>
-              <li><Link href="/admin">Audit Logs</Link></li>
+              <li><Link href="/admin">Admin Portal</Link></li>
             </ul>
           </div>
 

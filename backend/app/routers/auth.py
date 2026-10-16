@@ -17,7 +17,7 @@ from email.mime.text import MIMEText
 import httpx
 import pyotp
 import time
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Header, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -474,22 +474,33 @@ async def get_activity_logs(user: CurrentUser = Depends(current_user)) -> Activi
 async def logout(
     response: Response,
     request: Request,
-    user: CurrentUser = Depends(current_user),
+    authorization: str | None = Header(default=None),
+    access_token: str | None = Cookie(default=None),
 ) -> dict:
     """Invalidate current session and clear auth cookies."""
     ip, ua = _client_info(request)
-    if user.token:
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-        await repository.revoke_token(user.token, user.user_id, expires_at)
+    token = access_token
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1]
 
-    await repository.log_activity(
-        "logout_success",
-        user_id=user.user_id,
-        email=user.email,
-        detail="User logged out successfully",
-        ip_address=ip,
-        user_agent=ua,
-    )
+    if token:
+        try:
+            payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+            user_id = str(payload.get("sub", ""))
+            email = payload.get("email", "")
+            expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
+            if user_id:
+                await repository.revoke_token(token, user_id, expires_at)
+                await repository.log_activity(
+                    "logout_success",
+                    user_id=user_id,
+                    email=email,
+                    detail="User logged out successfully",
+                    ip_address=ip,
+                    user_agent=ua,
+                )
+        except Exception as exc:
+            logger.warning("Token revocation during logout: %s", exc)
 
     response.delete_cookie("access_token", path="/")
     response.delete_cookie("logged_in", path="/")
